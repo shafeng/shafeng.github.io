@@ -1,0 +1,1281 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>gameloft puyo | Shafeng`s blog</title>
+  <meta name="author" content="shafeng">
+  
+  <meta name="description" content="c++">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="gameloft puyo"/>
+  <meta property="og:site_name" content="Shafeng`s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="Shafeng`s blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Shafeng`s blog</a></h1>
+  <h2><a href="/">road</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">目录</a></li>
+    
+      <li><a href="/about">关于</a></li>
+    
+	<li> <a href="/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-03-19T15:19:38.000Z"><a href="/2014/03/19/gameloft-puyo/">2014-03-19</a></time>
+      
+      
+  
+    <h1 class="title">gameloft puyo</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <pre><code>#头文件#
+//tetris.h
+
+#ifndef _TETRIS_H_
+#define _TETRIS_H_
+
+//#define _TETRIS_DEBUG
+
+#include "include/glut.h"
+#include "include/glpng.h"
+#include &lt;list&gt;
+
+#pragma comment(lib,"glpng.lib")
+
+#define TETRIS_SCALE 2
+#define TETRIS_SCREEN_WIDTH    ((GLint)(96*TETRIS_SCALE))
+#define TETRIS_SCREEN_HEIGHT ((GLint)(192*TETRIS_SCALE))
+
+#define TETRIS_INFO_WIDTH 120
+
+#define TETRIS_KEY_ESCAPE 27
+#define TETRIS_KEY_UP 72
+#define TETRIS_KEY_DOWN 80
+#define TETRIS_KEY_LEFT 75
+#define TETRIS_KEY_RIGHT 77
+#define TETRIS_KEY_SPACE  32
+#define TETRIS_KEY_ENTER  13
+
+#define TETRIS_TEXTURE_COUNT 4
+
+#define TETRIS_UNIT_WIDTH 32
+#define TETRIS_UNIT_HEIGHT 32
+
+#define TETRIS_COLOR_BLUE 0
+#define TETRIS_GREEN_BLUE 1
+#define TETRIS_RED_BLUE 2
+#define TETRIS_YELLOW_BLUE 3
+
+#define TETRIS_UNITS_NUM (TETRIS_SCREEN_WIDTH/TETRIS_UNIT_WIDTH*TETRIS_SCREEN_HEIGHT/TETRIS_UNIT_HEIGHT)//72
+
+#define TETRIS_COL_NUMS (TETRIS_SCREEN_WIDTH/TETRIS_UNIT_WIDTH)//6
+#define TETRIS_ROW_NUMS (TETRIS_SCREEN_HEIGHT/TETRIS_UNIT_HEIGHT)//12
+
+#define TETRIS_FREQUENCY_MAX 32
+#define TETRIS_FREQUENCY_MIN 1
+
+#define TETRIS_DELAY_TIME 100
+
+
+using namespace std<span class="comment">;</span>
+
+struct ImageRec {
+    unsigned long sizeX<span class="comment">;</span>
+    unsigned long sizeY<span class="comment">;</span>
+    char *data<span class="comment">;</span>
+}<span class="comment">;</span>
+
+typedef struct _unitData{
+    GLubyte angle:2,color:2,fill:2,stat:2<span class="comment">;</span>
+}unitData<span class="comment">;</span>
+
+typedef struct{
+    GLshort col,row<span class="comment">;</span>
+}unitPos<span class="comment">;</span>
+
+typedef struct
+{
+    GLint mainWindow<span class="comment">; //which windown</span>
+    GLint textureCount<span class="comment">; //number of texture the game use</span>
+    GLuint theTextures[TETRIS_TEXTURE_COUNT+1]<span class="comment">; //to save information about texture</span>
+    unitData units[TETRIS_UNITS_NUM+TETRIS_COL_NUMS*2]<span class="comment">; // 72+12 = 84</span>
+    unitData CurUnits[2]<span class="comment">;</span>
+    unitPos CurUnitsPos[2]<span class="comment">;</span>
+    GLint CurUnitsStat<span class="comment">;</span>
+    GLint frequency<span class="comment">; //if frequency be changed,the downing speed of object also be changed.</span>
+    GLint frequencymax<span class="comment">; </span>
+    GLint score<span class="comment">; //score</span>
+    GLint scoreLastLevel<span class="comment">; //score when you pass the last level</span>
+    GLint level<span class="comment">; //level</span>
+    GLint gamecount<span class="comment">; //counter</span>
+    GLboolean gameover<span class="comment">;    // equal to 0: the game is running, equal to 1: game will finish</span>
+    GLboolean gamepause<span class="comment">; //tag about pausing the game</span>
+    GLboolean updating<span class="comment">;        //</span>
+    list&lt;unitData*&gt; pool<span class="comment">;</span>
+    list&lt;unitData*&gt; poolex<span class="comment">;</span>
+    GLint fontBase<span class="comment">;</span>
+    GLboolean levelStart<span class="comment">; </span>
+    GLint delay<span class="comment">; // to delay time </span>
+    GLint updateLevel<span class="comment">; // </span>
+    GLint waitUserTextSy,waitUserTextSydir<span class="comment">;</span>
+}tetrisMainData<span class="comment">;</span>
+
+
+#endif
+
+
+#源文件#
+#include "tetris.h"
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+using namespace std<span class="comment">;</span>
+const char *appName="Tetris"<span class="comment">;</span>
+const char *texturefiles[]={
+"puyo_blue.png",
+"puyo_green.png",
+"puyo_red.png",
+"puyo_yellow.png",
+}<span class="comment">;</span>
+const GLint TexCoord[4][4][2]={
+    <span class="number">0.0,0.0</span>, <span class="number">1.0,0.0</span>, <span class="number">1.0,1.0</span>, <span class="number">0.0,1.0</span>,
+        <span class="number">0.0,1.0</span>, <span class="number">0.0,0.0</span>, <span class="number">1.0,0.0</span>, <span class="number">1.0,1.0</span>,
+        <span class="number">1.0,1.0</span>, <span class="number">0.0,1.0</span>, <span class="number">0.0,0.0</span>, <span class="number">1.0,0.0</span>,
+        <span class="number">1.0,0.0</span>, <span class="number">1.0,1.0</span>, <span class="number">0.0,1.0</span>, <span class="number">0.0,0.0</span>,
+}<span class="comment">;</span>
+
+tetrisMainData tetris<span class="comment">;</span>
+
+GLvoid Tetris_InitParam(void)<span class="comment">;</span>
+
+
+#ifdef _TETRIS_DEBUG
+
+GLvoid tetris_debug(GLint t)
+{
+    switch(t)
+    {
+    case 0:
+        break<span class="comment">;</span>
+    case 1:
+        break<span class="comment">;</span>
+    case 2:
+        break<span class="comment">;</span>
+    }
+}
+
+
+#define debugSeg1() \
+if(tetris.CurUnitsPos[0].col == tetris.CurUnitsPos[1].col\
+   &amp;&amp; tetris.CurUnitsPos[0].row == tetris.CurUnitsPos[1].row)\
+   tetris_debug(1)<span class="comment">;</span>
+
+#define debugSeg2()\
+if(tetris.CurUnitsPos[0].row &gt; TETRIS_ROW_NUMS+1\
+   || tetris.CurUnitsPos[0].row &lt; 0) tetris_debug(2)<span class="comment">;\</span>
+if(tetris.CurUnitsPos[0].col &gt; TETRIS_COL_NUMS - 1\
+   || tetris.CurUnitsPos[0].col &lt; 0) tetris_debug(2)<span class="comment">;\</span>
+if(tetris.CurUnitsPos[1].row &gt; TETRIS_ROW_NUMS+1\
+   || tetris.CurUnitsPos[1].row &lt; 0) tetris_debug(2)<span class="comment">;\</span>
+if(tetris.CurUnitsPos[1].col &gt; TETRIS_COL_NUMS - 1\
+   || tetris.CurUnitsPos[1].col &lt; 0) tetris_debug(2)<span class="comment">;\</span>
+
+#define debugSeg3()\
+if(fabs(tetris.CurUnitsPos[0].col - tetris.CurUnitsPos[1].col) &gt; 2 \
+|| fabs(tetris.CurUnitsPos[0].row - tetris.CurUnitsPos[1].row) &gt; 2)\
+        tetris_debug(3)<span class="comment">;</span>
+
+#endif
+
+
+//Read bitmap file data.
+GLint ReadBMP(const char *filename, ImageRec *image) {
+
+    FILE *file<span class="comment">;</span>
+    unsigned long size<span class="comment">;</span>
+    unsigned long i<span class="comment">;</span>
+    unsigned short int planes<span class="comment">;</span>
+    unsigned short int bpp<span class="comment">;</span>
+    char temp<span class="comment">;</span>
+
+
+
+    if ((file = fopen(filename, "rb"))==NULL) {
+        printf("File Not Found : %s\n",filename)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    fseek(file, 18, SEEK_CUR)<span class="comment">;</span>
+
+    if ((i = fread(&amp;image-&gt;sizeX, 4, 1, file)) != 1) {
+        printf("Error reading width from %s.\n", filename)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    if ((i = fread(&amp;image-&gt;sizeY, 4, 1, file)) != 1) {
+        printf("Error reading height from %s.\n", filename)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    size = image-&gt;sizeX * image-&gt;sizeY * 3<span class="comment">;</span>
+
+    if ((fread(&amp;planes, 2, 1, file)) != 1) {
+        printf("Error reading planes from %s.\n", filename)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    if (planes != 1) {
+        printf("Planes from %s is not 1: %u\n", filename, planes)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    if ((i = fread(&amp;bpp, 2, 1, file)) != 1) {
+        printf("Error reading bpp from %s.\n", filename)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    if (bpp != 24) {
+        printf("Bpp from %s is not 24: %u\n", filename, bpp)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    fseek(file, 24, SEEK_CUR)<span class="comment">;</span>
+
+    image-&gt;data = (char *) malloc(size)<span class="comment">;</span>
+    if (image-&gt;data == NULL) {
+        printf("Error allocating memory for color-corrected image data")<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    if ((i = fread(image-&gt;data, size, 1, file)) != 1) {
+        printf("Error reading image data from %s.\n", filename)<span class="comment">;</span>
+        return 0<span class="comment">;</span>
+    }
+
+    for (i=0<span class="comment">;i&lt;size;i+=3) {</span>
+        temp = image-&gt;data[i]<span class="comment">;</span>
+        image-&gt;data[i] = image-&gt;data[i+2]<span class="comment">;</span>
+        image-&gt;data[i+2] = temp<span class="comment">;</span>
+    }
+
+    return 1<span class="comment">;</span>
+}
+
+
+//Load texture of font which the game used.
+GLboolean LoadBmpTextures(char *file,GLuint *texture)                                  
+{
+    int Status=0<span class="comment">;                              </span>
+    ImageRec *TextureImage=NULL<span class="comment">; </span>
+
+    TextureImage = (ImageRec*)malloc(sizeof(ImageRec))<span class="comment">;</span>
+    memset(TextureImage,0,sizeof(ImageRec))<span class="comment">;</span>
+
+    if (ReadBMP(file,TextureImage))
+    {
+        Status=1<span class="comment">;                           </span>
+        glGenTextures(1, texture)<span class="comment">;             </span>
+        glBindTexture(GL_TEXTURE_2D, *texture)<span class="comment">;</span>
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR)<span class="comment">;</span>
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR)<span class="comment">;</span>
+        glTexImage2D(GL_TEXTURE_2D, 0, 3, TextureImage-&gt;sizeX, TextureImage-&gt;sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureImage-&gt;data)<span class="comment">;</span>
+
+    }
+
+    if (TextureImage)                            
+    {
+        if (TextureImage-&gt;data)            
+        {
+            free(TextureImage-&gt;data)<span class="comment">;    </span>
+        }    
+        free(TextureImage)<span class="comment">;</span>
+    }
+
+    return Status<span class="comment">;                                 </span>
+}
+
+
+//Create font display list.
+GLvoid BuildFont(GLuint *texture)                                
+{
+    float    cx<span class="comment">;                                    </span>
+    float    cy<span class="comment">;        </span>
+    tetris.fontBase=glGenLists(256)<span class="comment">;                                </span>
+    glBindTexture(GL_TEXTURE_2D, (*texture))<span class="comment">;            </span>
+    for (GLint loop=0<span class="comment">; loop&lt;256; loop++)                        </span>
+    {
+        cx=float(loop%16)/16.0f<span class="comment">;                        </span>
+        cy=float(loop/16)/16.0f<span class="comment">;                        </span>
+
+        glNewList(tetris.fontBase+loop,GL_COMPILE)<span class="comment">;            </span>
+        glBegin(GL_QUADS)<span class="comment">;                            </span>
+        glTexCoord2f(cx,1-cy-0.0625f)<span class="comment">;        </span>
+        glVertex2i(0,0)<span class="comment">;                        </span>
+        glTexCoord2f(cx+0.0625f,1-cy-0.0625f)<span class="comment">;    </span>
+        glVertex2i(32,0)<span class="comment">;                        </span>
+        glTexCoord2f(cx+0.0625f,1-cy)<span class="comment">;            </span>
+        glVertex2i(32,32)<span class="comment">;                    </span>
+        glTexCoord2f(cx,1-cy)<span class="comment">;                    </span>
+        glVertex2i(0,32)<span class="comment">;                        </span>
+        glEnd()<span class="comment">;                                </span>
+        glTranslated(20,0,0)<span class="comment">;                        </span>
+        glEndList()<span class="comment">;                                    </span>
+    }                                                
+}
+
+
+//Delete the font
+GLvoid KillFont(GLvoid)                                    
+{
+    glDeleteLists(tetris.fontBase,256)<span class="comment">;                            </span>
+}
+
+
+//We can call the function below to display the content you want to...
+GLvoid glPrint(GLint x, GLint y, char *string)    
+{
+    glBindTexture(GL_TEXTURE_2D, tetris.theTextures[TETRIS_TEXTURE_COUNT])<span class="comment">;                                </span>
+    glPushMatrix()<span class="comment">;                                        </span>
+    glTranslated(x,y,0)<span class="comment">;                                </span>
+    glListBase(tetris.fontBase)<span class="comment">;                        </span>
+    glCallLists(strlen(string),GL_UNSIGNED_BYTE,string)<span class="comment">;                    </span>
+    glPopMatrix()<span class="comment">;                        </span>
+}
+
+//
+void Texture_Adjust(GLubyte r, GLubyte g, GLubyte b, GLubyte absolute)
+{ 
+    GLint width, height<span class="comment">; GLubyte* pixels = 0; </span>
+
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &amp;width)<span class="comment">;</span>
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &amp;height)<span class="comment">; </span>
+
+    pixels = (GLubyte*)malloc(width*height*4)<span class="comment">; </span>
+
+    if( pixels == 0 ) return<span class="comment">; </span>
+
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, pixels)<span class="comment">;     </span>
+    { 
+        GLint i<span class="comment">;</span>
+        GLint count = width * height<span class="comment">; </span>
+        for(i=0<span class="comment">; i&lt;count; ++i) </span>
+        { 
+            if( abs(pixels[i*4] - b) &lt;= absolute
+                &amp;&amp; abs(pixels[i*4+1] - g) &lt;= absolute 
+                &amp;&amp; abs(pixels[i*4+2] - r) &lt;= absolute ) 
+                pixels[i*4+3] = 0<span class="comment">;</span>
+            else 
+                pixels[i*4+3] = 255<span class="comment">; </span>
+        } 
+    } 
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, pixels)<span class="comment">; </span>
+    free(pixels)<span class="comment">;</span>
+}
+
+//
+void Texture_SetAlpha(GLubyte r, GLubyte g, GLubyte b,GLubyte absolute,GLubyte alpha)
+{ 
+    GLint width, height<span class="comment">; GLubyte* pixels = 0; </span>
+
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &amp;width)<span class="comment">;</span>
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &amp;height)<span class="comment">; </span>
+
+    pixels = (GLubyte*)malloc(width*height*4)<span class="comment">; </span>
+
+    if( pixels == 0 ) return<span class="comment">; </span>
+
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, pixels)<span class="comment">;     </span>
+    { 
+        GLint i<span class="comment">;</span>
+        GLint count = width * height<span class="comment">; </span>
+        for(i=0<span class="comment">; i&lt;count; ++i){</span>
+
+            if( abs(pixels[i*4] - b) &lt;= absolute
+                &amp;&amp; abs(pixels[i*4+1] - g) &lt;= absolute 
+                &amp;&amp; abs(pixels[i*4+2] - r) &lt;= absolute ) 
+                pixels[i*4+3] = alpha<span class="comment">;        </span>
+        }        
+    } 
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, pixels)<span class="comment">; </span>
+    free(pixels)<span class="comment">;</span>
+}
+
+
+//If the size of screen is changed,the function will be called.
+//to readjust the screen param.
+GLvoid changeWindow(GLsizei w, GLsizei h)
+{
+    if (h == 0) h = 1<span class="comment">;</span>
+    glViewport(0, 0, w, h)<span class="comment">;</span>
+    glMatrixMode(GL_PROJECTION)<span class="comment">;</span>
+    glLoadIdentity()<span class="comment">;</span>
+    if (w &lt;= h){
+        gluOrtho2D(0.0, TETRIS_SCREEN_WIDTH, 0.0, TETRIS_SCREEN_WIDTH * (GLfloat) h/(GLfloat) w)<span class="comment">;</span>
+        glScalef(1.0,((float)h/TETRIS_SCREEN_HEIGHT)/((float)w/TETRIS_SCREEN_WIDTH),1.0)<span class="comment">;</span>
+
+    }
+    else{
+        gluOrtho2D(0.0, TETRIS_SCREEN_HEIGHT * (GLfloat) w/(GLfloat) h, 0.0, TETRIS_SCREEN_HEIGHT)<span class="comment">;</span>
+
+        glScalef(((float)w/TETRIS_SCREEN_WIDTH)/((float)h/TETRIS_SCREEN_HEIGHT),<span class="number">1.0,1.0</span>)<span class="comment">;</span>
+    }    
+    glMatrixMode(GL_MODELVIEW)<span class="comment">;</span>
+    glLoadIdentity()<span class="comment">;    </span>
+}
+
+//load all resource will be used.
+GLvoid LoadGLTextures()
+{
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1)<span class="comment">;    </span>
+    pngInfo info[4]<span class="comment">;</span>
+    for (int k=0<span class="comment">; k &lt; TETRIS_TEXTURE_COUNT; k++){</span>
+        glGenTextures(1,&amp;tetris.theTextures[k])<span class="comment">;</span>
+        tetris.theTextures[k] = pngBind(texturefiles[k], PNG_NOMIPMAP, PNG_ALPHA, &amp;info[k], GL_CLAMP, GL_NEAREST, GL_NEAREST)<span class="comment">;</span>
+        Texture_Adjust(<span class="number">255,255,255,10</span>)<span class="comment">;</span>
+    }
+    LoadBmpTextures("buchstabenalpha.bmp",&amp;tetris.theTextures[TETRIS_TEXTURE_COUNT])<span class="comment">;</span>
+    Texture_Adjust(<span class="number">0,0,0,11</span>)<span class="comment">;</span>
+    Texture_SetAlpha(<span class="number">133,133,133,122</span>,128)<span class="comment">;    </span>
+    BuildFont(&amp;tetris.theTextures[TETRIS_TEXTURE_COUNT])<span class="comment">;        </span>
+}
+
+
+//Draw a sprites
+GLvoid render2Dsprite(GLint x,GLint y,GLint w,GLint h,GLint textureId,GLint angle=0)
+{        
+    const GLint (*p)[2]=TexCoord[angle]<span class="comment">;</span>
+    glBindTexture(GL_TEXTURE_2D,textureId)<span class="comment">;</span>
+    glBegin (GL_POLYGON)<span class="comment">;</span>
+    glTexCoord2f(p[0][0], p[0][1])<span class="comment">;    </span>
+    glVertex2f (x, y)<span class="comment">;</span>
+    glTexCoord2f(p[1][0], p[1][1])<span class="comment">;</span>
+    glVertex2f (x+w, y)<span class="comment">;</span>
+    glTexCoord2f(p[2][0], p[2][1])<span class="comment">;</span>
+    glVertex2f (x+w, y+h)<span class="comment">;</span>
+    glTexCoord2f(p[3][0], p[3][1])<span class="comment">;</span>
+    glVertex2f (x, y+h)<span class="comment">;</span>
+    glEnd ()<span class="comment">;    </span>
+}
+
+
+//Draw the scene of the game.
+GLvoid render()
+{
+    glutSetWindow(tetris.mainWindow)<span class="comment">;</span>
+    glClearColor(0.0, 0.0, 0.0, 1.0)<span class="comment">;</span>
+    glClear (GL_COLOR_BUFFER_BIT)<span class="comment">;</span>
+    glLoadIdentity()<span class="comment">;</span>
+    glPushMatrix()<span class="comment">;</span>
+
+    char str[32]<span class="comment">;</span>
+
+    glPushMatrix()<span class="comment">;</span>
+    glEnable (GL_BLEND)<span class="comment">;</span>
+
+        glLoadIdentity()<span class="comment">;</span>
+        str[0] = '\0'<span class="comment">;</span>
+        strcpy(str,"Tetris")<span class="comment">;</span>
+        glTranslatef(0.0,TETRIS_SCREEN_HEIGHT/2,0.0)<span class="comment">;</span>
+        glScalef(<span class="number">3.2,3.2</span>,1.0)<span class="comment">;        </span>
+        glPrint(<span class="number">0.0,0.0</span>,str)<span class="comment">;</span>
+        glDisable(GL_BLEND)<span class="comment">;        </span>
+    glPopMatrix()<span class="comment">;    </span>
+    glPushMatrix()<span class="comment">;    </span>
+
+        if(tetris.gameover){
+            if(tetris.gamecount&gt;&gt;4&amp;1){
+            glTranslatef(30,TETRIS_SCREEN_HEIGHT/<span class="number">2.0,0.0</span>)<span class="comment">;            </span>
+            glScalef(<span class="number">1.5,1.5</span>,1.0)<span class="comment">;        </span>
+            glPrint(<span class="number">0.0,0.0</span>,"Game Over!")<span class="comment">;    </span>
+            }
+        }
+
+        if(tetris.levelStart==1){
+            if(tetris.gamecount&gt;&gt;4&amp;1){
+                glTranslatef(50,TETRIS_SCREEN_HEIGHT/<span class="number">2.0,0.0</span>)<span class="comment">;</span>
+                str[0] = '\0'<span class="comment">;</span>
+                sprintf(str,"Level %d",tetris.level)<span class="comment">;</span>
+                glScalef(<span class="number">2.0,2.0</span>,1.0)<span class="comment">;        </span>
+                glPrint(<span class="number">0.0,0.0</span>,str)<span class="comment">;</span>
+            }
+        }
+
+        if(tetris.levelStart == 2)
+        {
+
+            if(tetris.gamecount&gt;&gt;4&amp;1){
+                glTranslatef(20.0,TETRIS_SCREEN_HEIGHT/2.0+tetris.waitUserTextSy,0.0)<span class="comment">;    </span>
+                glScalef(<span class="number">0.8,0.8</span>,1.0)<span class="comment">;</span>
+                glPrint(<span class="number">0.0,0.0</span>,"Press Enter to replay.")<span class="comment">;</span>
+            }
+
+            if(tetris.waitUserTextSydir){
+                tetris.waitUserTextSy += 2<span class="comment">;</span>
+                if(tetris.waitUserTextSy &gt; TETRIS_SCREEN_HEIGHT/2 - 32)
+                    tetris.waitUserTextSydir = 0<span class="comment">;</span>
+            }else{
+                tetris.waitUserTextSy -= 2<span class="comment">;</span>
+                if(tetris.waitUserTextSy &lt; -(TETRIS_SCREEN_HEIGHT/2 - 32))
+                    tetris.waitUserTextSydir = 1<span class="comment">;</span>
+            }            
+        }
+
+        if(tetris.updateLevel)
+        {
+            tetris.updateLevel--<span class="comment">;</span>
+            if(tetris.updateLevel&gt;TETRIS_DELAY_TIME){
+                if(tetris.gamecount&gt;&gt;4&amp;1){
+                    glTranslatef(35.0,TETRIS_SCREEN_HEIGHT/<span class="number">2.0,0.0</span>)<span class="comment">;    </span>
+                    glScalef(<span class="number">0.8,0.8</span>,1.0)<span class="comment">;</span>
+                    glPrint(<span class="number">0.0,0.0</span>,"Congratulation!")<span class="comment">;</span>
+                    glTranslatef(-15.0,-<span class="number">20.0,0.0</span>)<span class="comment">;</span>
+                    glPrint(<span class="number">0.0,0.0</span>,"Level updating!")<span class="comment">;</span>
+                }
+            }else{
+                if(tetris.gamecount&gt;&gt;4&amp;1){
+                    glTranslatef(50,TETRIS_SCREEN_HEIGHT/<span class="number">2.0,0.0</span>)<span class="comment">;</span>
+                    str[0] = '\0'<span class="comment">;</span>
+                    sprintf(str,"Level %d",tetris.level)<span class="comment">;</span>
+                    glScalef(<span class="number">2.0,2.0</span>,1.0)<span class="comment">;        </span>
+                    glPrint(<span class="number">0.0,0.0</span>,str)<span class="comment">;</span>
+                }
+            }
+        }
+        glPopMatrix()<span class="comment">;</span>
+
+    unitData *p=tetris.units,*pTemp<span class="comment">;</span>
+    for(int j=0<span class="comment">;j&lt;TETRIS_ROW_NUMS;j++){    </span>
+        for(int i=0<span class="comment">;i&lt;TETRIS_COL_NUMS;i++){</span>
+            pTemp = &amp;p[j*TETRIS_COL_NUMS+i]<span class="comment">;</span>
+            if(pTemp-&gt;fill){                
+                glPushMatrix()<span class="comment">;                </span>
+                render2Dsprite(i*TETRIS_UNIT_WIDTH,j*TETRIS_UNIT_HEIGHT,TETRIS_UNIT_WIDTH,TETRIS_UNIT_HEIGHT,tetris.theTextures[pTemp-&gt;color],pTemp-&gt;angle)<span class="comment">; </span>
+                glPopMatrix()<span class="comment">;            </span>
+            }
+        }    
+    }
+
+    glPushMatrix()<span class="comment">;    </span>
+        glEnable (GL_BLEND)<span class="comment">;</span>
+        glDisable(GL_ALPHA_TEST)<span class="comment">; </span>
+        glLoadIdentity()<span class="comment">;</span>
+        glTranslatef(0.0,TETRIS_SCREEN_HEIGHT-32,0.0)<span class="comment">;                    </span>
+        glPushMatrix()<span class="comment">;</span>
+            str[0] = '\0'<span class="comment">;</span>
+            glScalef(<span class="number">0.8,0.8</span>,1.0)<span class="comment">;</span>
+            sprintf(str,"Score:%d",tetris.score)<span class="comment">;</span>
+            glPrint(<span class="number">0.0,0.0</span>,str)<span class="comment">;</span>
+        glPopMatrix()<span class="comment">;    </span>
+        glTranslatef(TETRIS_SCREEN_WIDTH*<span class="number">2/3,0.0</span>,0.0)<span class="comment">;</span>
+        glPushMatrix()<span class="comment">;</span>
+            str[0] = '\0'<span class="comment">;</span>
+            glScalef(<span class="number">0.8,0.8</span>,1.0)<span class="comment">;</span>
+            sprintf(str,"Level:%d",tetris.level)<span class="comment">;</span>
+            glPrint(<span class="number">0.0,0.0</span>,str)<span class="comment">;</span>
+        glPopMatrix()<span class="comment">;</span>
+
+        glTranslatef(-TETRIS_SCREEN_WIDTH*2/3,-<span class="number">20.0,0.0</span>)<span class="comment">;</span>
+        glPushMatrix()<span class="comment">;            </span>
+        glScalef(<span class="number">0.7,0.7</span>,1.0)<span class="comment">;        </span>
+        glPrint(<span class="number">0.0,0.0</span>,"Press Space to pause.")<span class="comment">;</span>
+        glTranslatef(0.0,-<span class="number">20.0,0.0</span>)<span class="comment">;</span>
+        glPrint(<span class="number">0.0,0.0</span>,"Press Esc to exit.")<span class="comment">;</span>
+        glPopMatrix()<span class="comment">;</span>
+
+        glDisable(GL_BLEND)<span class="comment">;</span>
+        glEnable (GL_ALPHA_TEST)<span class="comment">;</span>
+    glPopMatrix()<span class="comment">;    </span>
+
+    glEnd ()<span class="comment">;</span>
+    glPopMatrix()<span class="comment">;    </span>
+    glutSwapBuffers()<span class="comment">;    </span>
+}
+
+GLvoid Tetris_SetSingleUnit(unitData *p,GLint color,GLint angle)
+{
+    p-&gt;fill = 1<span class="comment">; p-&gt;color = color; p-&gt;angle = angle;</span>
+}
+
+
+//Rotate the object.
+GLvoid Tetris_TwoUnitRotate()
+{
+    if(tetris.CurUnitsStat != 1) return<span class="comment">;</span>
+
+    unitData *pDest=NULL,*pMid=NULL,*pTemp<span class="comment">;</span>
+    unitData (*pa)[TETRIS_COL_NUMS]=(unitData (*)[TETRIS_COL_NUMS])tetris.units<span class="comment">;</span>
+
+    pTemp = &amp;pa[tetris.CurUnitsPos[0].row][tetris.CurUnitsPos[0].col]<span class="comment">;</span>
+
+    if(tetris.CurUnitsPos[1].col == tetris.CurUnitsPos[0].col){        
+        if(tetris.CurUnitsPos[1].row &lt; tetris.CurUnitsPos[0].row){
+            if(tetris.CurUnitsPos[1].col == TETRIS_COL_NUMS - 1) return<span class="comment">;</span>
+            pMid = pTemp - TETRIS_COL_NUMS + 1<span class="comment">;</span>
+            pDest = pTemp + 1<span class="comment">;</span>
+        }else if(tetris.CurUnitsPos[1].row &gt; tetris.CurUnitsPos[0].row){
+            if(tetris.CurUnitsPos[1].col == 0) return<span class="comment">;</span>
+            pMid = pTemp + TETRIS_COL_NUMS - 1<span class="comment">;</span>
+            pDest = pTemp - 1<span class="comment">;</span>
+        }else{
+#ifdef _TETRIS_DEBUG
+            tetris_debug(0)<span class="comment">;</span>
+#endif
+        }
+    }else if(tetris.CurUnitsPos[1].row == tetris.CurUnitsPos[0].row){
+        if(tetris.CurUnitsPos[1].col &lt; tetris.CurUnitsPos[0].col){
+            if(tetris.CurUnitsPos[1].row == 0) return<span class="comment">;</span>
+            pMid = pTemp - TETRIS_COL_NUMS - 1<span class="comment">;</span>
+            pDest = pTemp - TETRIS_COL_NUMS<span class="comment">;</span>
+        }else if(tetris.CurUnitsPos[1].col &gt; tetris.CurUnitsPos[0].col){
+            pMid = pTemp + TETRIS_COL_NUMS + 1<span class="comment">;</span>
+            pDest = pTemp + TETRIS_COL_NUMS<span class="comment">;</span>
+        }else{
+#ifdef _TETRIS_DEBUG
+            tetris_debug(0)<span class="comment">;</span>
+#endif
+        }        
+    }else {
+#ifdef _TETRIS_DEBUG
+        tetris_debug(0)<span class="comment">;</span>
+#endif
+    }
+
+    if(NULL == pDest || NULL == pMid) return<span class="comment">;</span>
+
+    if(pDest-&gt;fill || pMid-&gt;fill) return<span class="comment">;</span>
+
+    pa[tetris.CurUnitsPos[1].row][tetris.CurUnitsPos[1].col].fill = 0<span class="comment">;    </span>
+
+    tetris.CurUnitsPos[1].col = (pDest - tetris.units) % TETRIS_COL_NUMS<span class="comment">;</span>
+    tetris.CurUnitsPos[1].row = (pDest - tetris.units) / TETRIS_COL_NUMS<span class="comment">;</span>
+
+    tetris.CurUnits[1].angle = (tetris.CurUnits[1].angle+1)%4<span class="comment">;</span>
+    tetris.CurUnits[0].angle = (tetris.CurUnits[0].angle+1)%4<span class="comment">;</span>
+
+    pa[tetris.CurUnitsPos[0].row][tetris.CurUnitsPos[0].col].angle = tetris.CurUnits[0].angle<span class="comment">;</span>
+
+    Tetris_SetSingleUnit(pDest,tetris.CurUnits[1].color,tetris.CurUnits[1].angle)<span class="comment">;</span>
+
+}
+
+
+//Call back function about keyboard.
+GLvoid keys(unsigned char key, GLint x, GLint y)
+{
+    if(key == TETRIS_KEY_ESCAPE) exit(0)<span class="comment">;</span>
+
+    if(key == TETRIS_KEY_SPACE) { tetris.gamepause = (++tetris.gamepause)%2<span class="comment">;}</span>
+
+    if(key == TETRIS_KEY_ENTER) {
+        tetris.levelStart = 0<span class="comment">;</span>
+        tetris.delay = TETRIS_DELAY_TIME<span class="comment">;</span>
+        Tetris_InitParam()<span class="comment">;</span>
+
+    }
+
+    if(tetris.CurUnitsStat != 1) return<span class="comment">;</span>
+    if(tetris.gamepause) return<span class="comment">;</span>
+    if(tetris.levelStart) return<span class="comment">;</span>
+    if(tetris.gameover) return<span class="comment">;</span>
+
+    unitData (*pa)[TETRIS_COL_NUMS]=(unitData (*)[TETRIS_COL_NUMS])tetris.units<span class="comment">;</span>
+    unitData *pUnitTemp[2]<span class="comment">;</span>
+
+    GLint i,j,k<span class="comment">;</span>
+
+    for(i=0<span class="comment">;i&lt;2;i++)</span>
+        pUnitTemp[i] = &amp;pa[tetris.CurUnitsPos[i].row][tetris.CurUnitsPos[i].col]<span class="comment">;</span>
+
+    switch(key)
+    {
+    case TETRIS_KEY_SPACE:        
+        break<span class="comment">;</span>
+    case TETRIS_KEY_UP:
+        Tetris_TwoUnitRotate()<span class="comment">;</span>
+        break<span class="comment">;</span>
+    case TETRIS_KEY_DOWN:        
+        tetris.frequency = TETRIS_FREQUENCY_MIN<span class="comment">;</span>
+        break<span class="comment">;</span>
+    case TETRIS_KEY_LEFT:
+        j = tetris.CurUnitsPos[0].col &lt;= tetris.CurUnitsPos[1].col<span class="comment">;</span>
+        for(k=0<span class="comment">;k&lt;2;k++){</span>
+            if(j == 0) i = (k+1)%2<span class="comment">;</span>
+            else i = k<span class="comment">;        </span>
+            if(tetris.CurUnits[i].stat) continue<span class="comment">;</span>
+            if(tetris.CurUnitsPos[i].col &gt; 0
+                &amp;&amp; !(pUnitTemp[i]-1)-&gt;fill){
+                tetris.CurUnitsPos[i].col--<span class="comment">;</span>
+                pUnitTemp[i]-&gt;fill = 0<span class="comment">;                 </span>
+                Tetris_SetSingleUnit(pUnitTemp[i]-1,tetris.CurUnits[i].color,tetris.CurUnits[i].angle)<span class="comment">;    </span>
+            }
+        }
+        break<span class="comment">;</span>
+    case TETRIS_KEY_RIGHT:
+        j = tetris.CurUnitsPos[0].col &gt;= tetris.CurUnitsPos[1].col<span class="comment">;</span>
+        for(k=0<span class="comment">;k&lt;2;k++){            </span>
+            if(j == 0) i = (k+1)%2<span class="comment">;</span>
+            else i = k<span class="comment">;</span>
+            if(tetris.CurUnits[i].stat) continue<span class="comment">;</span>
+            if(tetris.CurUnitsPos[i].col &lt; TETRIS_COL_NUMS - 1
+                &amp;&amp; !(pUnitTemp[i]+1)-&gt;fill){    
+                tetris.CurUnitsPos[i].col++<span class="comment">;</span>
+                pUnitTemp[i]-&gt;fill = 0<span class="comment">;</span>
+                Tetris_SetSingleUnit(pUnitTemp[i]+1,tetris.CurUnits[i].color,tetris.CurUnits[i].angle)<span class="comment">;</span>
+            }
+        }
+        break<span class="comment">;</span>
+    }
+    glutPostRedisplay()<span class="comment">;</span>
+}
+
+
+
+GLvoid specialKeysPressed(GLint key, GLint x, GLint y)
+{
+    switch(key)
+    {
+    case GLUT_KEY_UP:
+        keys(TETRIS_KEY_UP,0,0)<span class="comment">;</span>
+        break<span class="comment">;</span>
+    case GLUT_KEY_DOWN:
+        keys(TETRIS_KEY_DOWN,0,0)<span class="comment">;        </span>
+        break<span class="comment">;</span>
+    case GLUT_KEY_LEFT:
+        keys(TETRIS_KEY_LEFT,0,0)<span class="comment">;</span>
+        break<span class="comment">;</span>
+    case GLUT_KEY_RIGHT:
+        keys(TETRIS_KEY_RIGHT,0,0)<span class="comment">;         </span>
+        break<span class="comment">;</span>
+    }    
+}
+
+GLvoid Tetris_InitMem(void*start,GLint size)
+{
+    GLbyte *p=(GLbyte*)start<span class="comment">;</span>
+    while(size--) (*p) = 0<span class="comment">;</span>
+}
+
+GLvoid Tetris_InitTwoUnits(unitData*p)
+{
+    GLint tmp=rand()%3<span class="comment">;</span>
+
+    switch(tmp)
+    {
+    case 0:
+        tmp = TETRIS_COL_NUMS / 2 - 1<span class="comment">;</span>
+        tetris.CurUnitsPos[0].col = tmp<span class="comment">;</span>
+        tetris.CurUnitsPos[1].col = tmp+1<span class="comment">;</span>
+        tetris.CurUnitsPos[0].row = TETRIS_ROW_NUMS<span class="comment">;</span>
+        tetris.CurUnitsPos[1].row = TETRIS_ROW_NUMS<span class="comment">;        </span>
+        break<span class="comment">;</span>
+    case 1:
+        tmp = TETRIS_COL_NUMS / 2 - 1<span class="comment">;</span>
+        tetris.CurUnitsPos[0].col = tmp<span class="comment">;</span>
+        tetris.CurUnitsPos[1].col = tmp<span class="comment">;</span>
+        tetris.CurUnitsPos[0].row = TETRIS_ROW_NUMS<span class="comment">;</span>
+        tetris.CurUnitsPos[1].row = TETRIS_ROW_NUMS+1<span class="comment">;</span>
+        break<span class="comment">;</span>
+    case 2:
+        tmp = TETRIS_COL_NUMS / 2<span class="comment">;</span>
+        tetris.CurUnitsPos[0].col = tmp<span class="comment">;</span>
+        tetris.CurUnitsPos[1].col = tmp<span class="comment">;</span>
+        tetris.CurUnitsPos[0].row = TETRIS_ROW_NUMS<span class="comment">;</span>
+        tetris.CurUnitsPos[1].row = TETRIS_ROW_NUMS+1<span class="comment">;</span>
+        break<span class="comment">;</span>
+    }
+
+    Tetris_InitMem(&amp;p[0],sizeof(unitData))<span class="comment">;</span>
+    p[0].color = rand()%4<span class="comment">;</span>
+    Tetris_InitMem(&amp;p[1],sizeof(unitData))<span class="comment">;</span>
+    p[1].color = rand()%4<span class="comment">;</span>
+    tetris.CurUnitsStat = 1<span class="comment">;</span>
+}
+
+GLvoid Tetris_GameOver()
+{
+    memset(tetris.units,0,sizeof(tetris.units))<span class="comment">;</span>
+    tetris.pool.clear()<span class="comment">;</span>
+    tetris.poolex.clear()<span class="comment">;</span>
+}
+
+
+//
+GLboolean Tetris_TwoUnitsFunc(unitData *p)
+{
+    unitData (*pa)[TETRIS_COL_NUMS]=(unitData (*)[TETRIS_COL_NUMS])tetris.units<span class="comment">;</span>
+    unitData *pUnitTemp[2],*ps<span class="comment">;</span>
+
+    GLint i,j,k,cnt<span class="comment">;</span>
+
+    for(i=0<span class="comment">;i&lt;2;i++)</span>
+        pUnitTemp[i] = &amp;pa[tetris.CurUnitsPos[i].row][tetris.CurUnitsPos[i].col]<span class="comment">;    </span>
+
+    if(tetris.gamecount % tetris.frequency){ return 0<span class="comment">;}</span>
+    else{    
+        j = (tetris.CurUnitsPos[0].row &lt;= tetris.CurUnitsPos[1].row)<span class="comment">;</span>
+        cnt = 0<span class="comment">;</span>
+        for(k=0<span class="comment">;k&lt;2;k++){</span>
+            if(j == 0) i = (k+1)%2<span class="comment">;</span>
+            else i = k<span class="comment">;</span>
+            if(0 != p[i].stat) 
+                continue<span class="comment">;</span>
+            cnt++<span class="comment">;</span>
+            ps = pUnitTemp[i] - TETRIS_COL_NUMS<span class="comment">;</span>
+            if(ps &gt;= tetris.units){    
+                if(ps-&gt;fill &lt; 2){
+                    if(--tetris.CurUnitsPos[i].row &lt; 0) 
+                        tetris.CurUnitsPos[i].row = 0<span class="comment">;                        </span>
+                    Tetris_SetSingleUnit(ps,p[i].color,p[i].angle)<span class="comment">;                    </span>
+                    pUnitTemp[i]-&gt;fill = 0<span class="comment">;                        </span>
+                }else {
+                    if(ps &lt; &amp;tetris.units[TETRIS_UNITS_NUM])
+                    {
+                        pUnitTemp[i]-&gt;fill = 2<span class="comment">;</span>
+                        if(pUnitTemp[i] &gt; &amp;tetris.units[TETRIS_UNITS_NUM] - TETRIS_COL_NUMS )
+                        {
+                            tetris.gameover = 1<span class="comment">;</span>
+                            tetris.delay = TETRIS_DELAY_TIME*2<span class="comment">;</span>
+                            Tetris_GameOver()<span class="comment">;</span>
+                            return 1<span class="comment">;</span>
+                        }
+                    }
+                    p[i].stat = 1<span class="comment">;                </span>
+                }
+            }else{
+                p[i].stat = 1<span class="comment">;                </span>
+                pUnitTemp[i]-&gt;fill = 2<span class="comment">;                        </span>
+            }
+        }
+        if(0 == cnt) tetris.CurUnitsStat = 2<span class="comment">;</span>
+
+        tetris.updating = 1<span class="comment">;</span>
+        tetris.pool.clear()<span class="comment">;</span>
+        tetris.pool.push_back(&amp;pa[tetris.CurUnitsPos[0].row][tetris.CurUnitsPos[0].col])<span class="comment">;</span>
+        tetris.pool.push_back(&amp;pa[tetris.CurUnitsPos[1].row][tetris.CurUnitsPos[1].col])<span class="comment">;</span>
+    }
+    return 1<span class="comment">;</span>
+}
+
+
+
+GLvoid Tetris_Update()
+{
+    GLint i,j,cnt=0<span class="comment">;</span>
+
+    unitData (*pa)[TETRIS_COL_NUMS]=(unitData (*)[TETRIS_COL_NUMS])tetris.units<span class="comment">;</span>
+
+    list&lt;unitData*&gt; *pool<span class="comment">;</span>
+    list&lt;unitData*&gt;<span class="number">::</span>iterator iter<span class="comment">;    </span>
+
+    GLint col,row<span class="comment">;</span>
+
+    pool = &amp;tetris.poolex<span class="comment">;</span>
+
+    for(cnt=0,iter=pool-&gt;begin()<span class="comment">;iter != pool-&gt;end(); iter++)</span>
+    {
+        unitData *p,*q<span class="comment">;</span>
+
+        p = q = (*iter)<span class="comment">;</span>
+
+        i = 0<span class="comment">;</span>
+        p += TETRIS_COL_NUMS<span class="comment">;</span>
+        while(p &lt; &amp;tetris.units[TETRIS_UNITS_NUM] &amp;&amp; p-&gt;fill) { i++<span class="comment">; p += TETRIS_COL_NUMS; }</span>
+
+        if(i &gt; 0)
+        {            
+            p = (*iter)<span class="comment">;</span>
+            p -= TETRIS_COL_NUMS<span class="comment">;</span>
+            while(p &gt;= tetris.units &amp;&amp; !p-&gt;fill) {p -= TETRIS_COL_NUMS<span class="comment">; }    </span>
+
+            tetris.pool.push_back(p+TETRIS_COL_NUMS)<span class="comment">;</span>
+
+            j = 0<span class="comment">;</span>
+            while(j++ &lt; i){
+                p += TETRIS_COL_NUMS<span class="comment">;</span>
+                q += TETRIS_COL_NUMS<span class="comment">; </span>
+                (*p)=(*q)<span class="comment">;</span>
+                p-&gt;fill = 2<span class="comment">;</span>
+                q-&gt;fill = 0<span class="comment">;</span>
+            }    
+
+            cnt++<span class="comment">;</span>
+        }        
+    }
+
+    if(pool-&gt;size() &gt; 0) pool-&gt;clear()<span class="comment">;</span>
+
+    if(cnt) return<span class="comment">;</span>
+
+    pool = &amp;tetris.pool<span class="comment">;</span>
+
+    for(cnt = 0,iter=pool-&gt;begin()<span class="comment">;iter != pool-&gt;end(); iter++)</span>
+    {
+        unitData *p,*pthis<span class="comment">;</span>
+
+        GLint nums[4]={0},num=0<span class="comment">; //bottom,left,right,above</span>
+        GLint thiscol,thisrow,index<span class="comment">;</span>
+
+        p = pthis = (*iter)<span class="comment">;</span>
+
+        index = p - tetris.units<span class="comment">;</span>
+        thiscol = index % TETRIS_COL_NUMS<span class="comment">;</span>
+        thisrow = index / TETRIS_COL_NUMS<span class="comment">;</span>
+
+        //bottom
+        i = 0<span class="comment">;</span>
+        row = thisrow - 1<span class="comment">;</span>
+        col = thiscol<span class="comment">;</span>
+        p = &amp;pa[row][col]<span class="comment">;</span>
+        while(row &gt;= 0 &amp;&amp; p-&gt;fill &amp;&amp; p-&gt;color == pthis-&gt;color) { nums[0]++<span class="comment">; p = &amp;pa[--row][col]; }</span>
+
+        //left
+        i = 0<span class="comment">;</span>
+        row = thisrow<span class="comment">;</span>
+        col = thiscol - 1<span class="comment">;</span>
+        p = &amp;pa[row][col]<span class="comment">;</span>
+        while(col &gt;= 0 &amp;&amp; p-&gt;fill &amp;&amp; p-&gt;color == pthis-&gt;color) { nums[1]++<span class="comment">; p = &amp;pa[row][--col]; }</span>
+
+        //right
+        i = 0<span class="comment">;</span>
+        row = thisrow<span class="comment">;</span>
+        col = thiscol + 1<span class="comment">;</span>
+        p = &amp;pa[row][col]<span class="comment">;</span>
+        while(col &lt; TETRIS_COL_NUMS &amp;&amp; p-&gt;fill &amp;&amp; p-&gt;color == pthis-&gt;color) { nums[2]++<span class="comment">; p = &amp;pa[row][++col]; }</span>
+
+        //above
+        i = 0<span class="comment">;</span>
+        row = thisrow + 1<span class="comment">;</span>
+        col = thiscol<span class="comment">;</span>
+        p = &amp;pa[row][col]<span class="comment">;</span>
+        while(row &lt; TETRIS_ROW_NUMS &amp;&amp; p-&gt;fill &amp;&amp; p-&gt;color == pthis-&gt;color) { 
+            nums[3]++<span class="comment">; p = &amp;pa[++row][col]; </span>
+        }
+
+        num = nums[0] + nums[3] + 1<span class="comment">;</span>
+        if(num &gt;= 4){
+            p = pthis - nums[0] * TETRIS_COL_NUMS<span class="comment">;</span>
+            for(i = 0<span class="comment">; i &lt; num; i++){</span>
+                p-&gt;fill = 0<span class="comment">;</span>
+                p += TETRIS_COL_NUMS<span class="comment">;</span>
+            }
+
+            tetris.score += 5*num<span class="comment">;</span>
+
+            p = p-TETRIS_COL_NUMS<span class="comment">;</span>
+
+            unitPos *pos=tetris.CurUnitsPos<span class="comment">;</span>
+
+            if(p == &amp;pa[pos[0].row][pos[0].col]
+                || p == &amp;pa[pos[0].row][pos[0].col]){}
+            else{                
+                tetris.poolex.push_back(p)<span class="comment">;</span>
+                cnt++<span class="comment">;</span>
+            }
+        }
+
+        num = nums[1] + nums[2] + 1<span class="comment">;</span>
+        if(num &gt;= 4){            
+            p = pthis - nums[1]<span class="comment">;        </span>
+            for(i = 0<span class="comment">; i &lt; num; i++){</span>
+                tetris.poolex.push_back(p)<span class="comment">;</span>
+                p-&gt;fill = 0<span class="comment">;                </span>
+                p++<span class="comment">;</span>
+            }    
+            tetris.score += 5*num<span class="comment">;</span>
+            cnt++<span class="comment">;</span>
+        }
+    }
+
+    if((tetris.score - tetris.scoreLastLevel) &gt; 50 + (tetris.level) * 10){
+        tetris.updateLevel = 128<span class="comment">;</span>
+        tetris.level++<span class="comment">;</span>
+        tetris.scoreLastLevel = tetris.score<span class="comment">;</span>
+        tetris.frequencymax -= 2<span class="comment">;</span>
+        if(tetris.frequencymax &lt; 1) tetris.frequencymax = 1<span class="comment">;</span>
+    }
+
+    if(0 == cnt) {
+        tetris.updating = 0<span class="comment">;</span>
+        for(i = 0<span class="comment">; i &lt; 2; i++)</span>
+            if(!pa[tetris.CurUnitsPos[i].row][tetris.CurUnitsPos[i].col].fill) 
+                tetris.CurUnits[i].stat = 1<span class="comment">;</span>
+    }
+    else tetris.updating++<span class="comment">;</span>
+
+}
+
+
+//Timer, 
+GLvoid OnTimer(int time)
+{
+    unitData *p=tetris.CurUnits<span class="comment">;</span>
+
+    GLboolean flag=0<span class="comment">;</span>
+
+    if(++tetris.gamecount == 30000)
+        tetris.gamecount = 0<span class="comment">;</span>
+
+    if(tetris.gamepause
+        ||tetris.gameover
+        || tetris.levelStart
+        || tetris.delay) 
+    {
+        glutTimerFunc(5, OnTimer, 1)<span class="comment">;        </span>
+        glutPostRedisplay()<span class="comment">;</span>
+        if(tetris.delay &gt; 0){
+            tetris.delay--<span class="comment">;</span>
+            if(tetris.delay == 0){
+                if(tetris.levelStart==1){
+                    tetris.levelStart = 0<span class="comment">;</span>
+                    //tetris.gameover = 1<span class="comment">;</span>
+                    //tetris.delay = TETRIS_DELAY_TIME<span class="comment">;</span>
+                    //tetris.levelStart = 2<span class="comment">;</span>
+
+                    return<span class="comment">;</span>
+                }
+
+                if(tetris.gameover){
+                    tetris.gameover = 0<span class="comment">;</span>
+                    tetris.levelStart = 2<span class="comment">;</span>
+                    tetris.waitUserTextSy = 0<span class="comment">;</span>
+                    return<span class="comment">;</span>
+                }
+            }
+        }
+        return<span class="comment">;</span>
+    }
+
+    switch(tetris.CurUnitsStat)
+    {
+
+    case 0:        
+        Tetris_InitTwoUnits(p)<span class="comment">;</span>
+        break<span class="comment">;</span>
+    case 1:
+        if(!tetris.updating)
+            flag = Tetris_TwoUnitsFunc(p)<span class="comment">;</span>
+        break<span class="comment">;</span>
+    case 2:    
+        tetris.CurUnitsStat = 0<span class="comment">;    </span>
+        break<span class="comment">;</span>
+    }
+
+    glutPostRedisplay()<span class="comment">;    </span>
+    glutTimerFunc(5, OnTimer, 1)<span class="comment">;</span>
+
+    if(!flag &amp;&amp; tetris.updating)        
+        Tetris_Update()<span class="comment">;    </span>
+    tetris.frequency = tetris.frequencymax<span class="comment">;    </span>
+}
+
+GLvoid idle()
+{
+
+}
+
+GLvoid Tetris_InitParam(void)
+{
+    tetris.level = 1<span class="comment">;</span>
+    tetris.score = 0<span class="comment">;</span>
+    tetris.levelStart = 1<span class="comment">;</span>
+    tetris.frequencymax = TETRIS_FREQUENCY_MAX<span class="comment">;</span>
+    tetris.frequency = tetris.frequencymax<span class="comment">;</span>
+    tetris.delay = TETRIS_DELAY_TIME<span class="comment">;</span>
+    tetris.CurUnitsStat = 0<span class="comment">;</span>
+    memset(tetris.CurUnits,0,sizeof(tetris.CurUnits))<span class="comment">;</span>
+    memset(tetris.CurUnitsPos,0,sizeof(tetris.CurUnitsPos))<span class="comment">;</span>
+    memset(tetris.units,0,sizeof(tetris.units))<span class="comment">;</span>
+    tetris.scoreLastLevel = 0<span class="comment">;</span>
+}
+
+
+//Init game.
+GLvoid initgame()
+{
+    LoadGLTextures()<span class="comment">;    </span>
+    glEnable(GL_TEXTURE_2D)<span class="comment">;</span>
+    glAlphaFunc(GL_GREATER, 0.1f)<span class="comment">;    </span>
+    glEnable (GL_BLEND)<span class="comment">;</span>
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)<span class="comment">;</span>
+    glShadeModel (GL_FLAT)<span class="comment">;    </span>
+    Tetris_InitParam()<span class="comment">;    </span>
+}
+
+GLint main(GLint argc,char** argv)
+{
+    glutInit(&amp;argc, argv)<span class="comment">;</span>
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA)<span class="comment">;</span>
+    glutInitWindowPosition(<span class="number">100,100</span>)<span class="comment">;</span>
+    glutInitWindowSize(TETRIS_SCREEN_WIDTH,TETRIS_SCREEN_HEIGHT)<span class="comment">;    </span>
+    tetris.mainWindow = glutCreateWindow(appName)<span class="comment">;    </span>
+    glutReshapeFunc(changeWindow)<span class="comment">;</span>
+    glutDisplayFunc(render)<span class="comment">;</span>
+    glutKeyboardFunc(keys)<span class="comment">;</span>
+    glutSpecialFunc(specialKeysPressed)<span class="comment">;</span>
+    glutSetCursor(GLUT_CURSOR_NONE)<span class="comment">;</span>
+    glutTimerFunc(5,OnTimer,1)<span class="comment">;</span>
+    glutIdleFunc(idle)<span class="comment">;</span>
+
+    initgame()<span class="comment">;</span>
+
+    glutMainLoop()<span class="comment">;    </span>
+    return 0<span class="comment">;</span>
+}
+</code></pre>
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C/">C++</a>, <a href="/tags/源代码/">源代码</a>
+  </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/C/">C++</a><small>9</small></li>
+  
+    <li><a href="/tags/DB/">DB</a><small>1</small></li>
+  
+    <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/单词/">单词</a><small>1</small></li>
+  
+    <li><a href="/tags/博客/">博客</a><small>9</small></li>
+  
+    <li><a href="/tags/技术/">技术</a><small>8</small></li>
+  
+    <li><a href="/tags/文章/">文章</a><small>9</small></li>
+  
+    <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 15px;">技术</a> <a href="/tags/文章/" style="font-size: 20px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+  </div>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+<li><a href="http://zipperary.com/" title="Zippera's Blog">Zippera</a></li>
+</ul>
+</div>
+
+  <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1235899094&verifier=a6902c2e&dpc=1"></iframe>
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2016 shafeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

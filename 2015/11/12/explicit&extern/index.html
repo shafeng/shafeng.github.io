@@ -1,0 +1,190 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>C++中的explicit和extern | Shafeng`s blog</title>
+  <meta name="author" content="shafeng">
+  
+  <meta name="description" content="c++">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="C++中的explicit和extern"/>
+  <meta property="og:site_name" content="Shafeng`s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="Shafeng`s blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Shafeng`s blog</a></h1>
+  <h2><a href="/">road</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">目录</a></li>
+    
+      <li><a href="/about">关于</a></li>
+    
+	<li> <a href="/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-11-12T09:18:53.000Z"><a href="/2015/11/12/explicit&extern/">2015-11-12</a></time>
+      
+      
+  
+    <h1 class="title">C++中的explicit和extern</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="explicit">explicit</h2><p>C++提供了关键字explicit，可以阻止不应该允许的经过转换构造函数进行的隐式转换的发生。声明为explicit的构造函数不能在隐式转换中使用<br>C++中， 一个参数的构造函数(或者除了第一个参数外其余参数都有默认值的多参构造函数)， 承担了两个角色。 1 是个构造器 ，2 是个默认且隐含的类型转换操作符。<br>explicit构造函数是用来防止隐式转换的。请看下面的代码：<br>    <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> Test1</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	Test1(<span class="keyword">int</span> n)</span><br><span class="line">	&#123;</span><br><span class="line">		num=n;</span><br><span class="line">	&#125;<span class="comment">//普通构造函数</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">int</span> num;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">class</span> Test2</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">explicit</span> <span class="title">Test2</span><span class="params">(<span class="keyword">int</span> n)</span></span><br><span class="line">	</span>&#123;</span><br><span class="line">		num=n;</span><br><span class="line">	&#125;<span class="comment">//explicit(显式)构造函数</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">int</span> num;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">	Test1 t1=<span class="number">12</span>;<span class="comment">//隐式调用其构造函数,成功</span></span><br><span class="line">	Test2 t2=<span class="number">12</span>;<span class="comment">//编译错误,不能隐式调用其构造函数</span></span><br><span class="line">	<span class="function">Test2 <span class="title">t2</span><span class="params">(<span class="number">12</span>)</span></span>;<span class="comment">//显式调用成功</span></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>只要是构造函数中只有一个可变参数的C++类，都要避免隐式调用。</p>
+<h2 id="extern">extern</h2><h3 id="extern可置于变量或者函数前，以表示变量或者函数的定义在别的文件中，提示编译器遇到此变量或函数时，在其它模块中寻找其定义。">extern可置于变量或者函数前，以表示变量或者函数的定义在别的文件中，提示编译器遇到此变量或函数时，在其它模块中寻找其定义。</h3><p>下面这段代码没有使用任何 extern 关键字，编译中会报错。<br>    <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//A.cpp</span></span><br><span class="line"><span class="keyword">int</span> i;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//B.cpp</span></span><br><span class="line"><span class="keyword">int</span> i;</span><br></pre></td></tr></table></figure></p>
+<p>添加extren关键字后可以编译通过，提示编译器i变量定义在其他模块中<br>    <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//A.cpp</span></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">int</span> i;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">	i=<span class="number">100</span>;<span class="comment">//试图使用B中定义的全局变量</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//B.cpp</span></span><br><span class="line"><span class="keyword">int</span> i;</span><br></pre></td></tr></table></figure></p>
+<h3 id="extern也可用来进行链接指定。">extern也可用来进行链接指定。</h3><p>C++支持函数重载，而过程式语言C则不支持。函数被C++编译后在符号库中的名字与C语言的不同。例如，假设某个函数的原型为：<br>void foo( int x, int y );该函数被C编译器编译后在符号库中的名字为_foo，而C++编译器则会产生像_foo_int_int之类的名字<br>（不同的编译器可能生成的名字不同，但是都采用了相同的机制，生成的新名字称为“mangled name”）。_foo_int_int这样的名字<br>包含了函数名、函数参数数量及类型信息，C++就是靠这种机制来实现函数重载的。例如，在C++中，函数void foo( int x, int y )<br>与void foo( int x, float y )编译生成的符号是不相同的，后者为_foo_int_float。同样地，C++中的变量除支持局部变量外，<br>还支持类成员变量和全局变量。用户所编写程序的类成员变量可能与全局变量同名，我们以”.”来区分。而本质上，编译器在进行编译时，<br>与函数的处理相似，也为类中的变量取了一个独一无二的名字，这个名字与用户程序中同名的全局变量名字不同。<br>在C++中引用C语言中的函数和变量，在包含C语言头文件（假设为cExample.h）时，需进行下列处理：<br>    <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="preprocessor">#<span class="keyword">include</span> <span class="string">"cExample.h"</span>	</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C/">C++</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>, <a href="/tags/文章/">文章</a>
+  </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/C/">C++</a><small>9</small></li>
+  
+    <li><a href="/tags/DB/">DB</a><small>1</small></li>
+  
+    <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/单词/">单词</a><small>1</small></li>
+  
+    <li><a href="/tags/博客/">博客</a><small>9</small></li>
+  
+    <li><a href="/tags/技术/">技术</a><small>8</small></li>
+  
+    <li><a href="/tags/文章/">文章</a><small>9</small></li>
+  
+    <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 15px;">技术</a> <a href="/tags/文章/" style="font-size: 20px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+  </div>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+<li><a href="http://zipperary.com/" title="Zippera's Blog">Zippera</a></li>
+</ul>
+</div>
+
+  <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1235899094&verifier=a6902c2e&dpc=1"></iframe>
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2016 shafeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

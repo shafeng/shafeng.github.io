@@ -1,0 +1,222 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>最近面试的一些笔记(1.const和static的用法) | Shafeng`s blog</title>
+  <meta name="author" content="shafeng">
+  
+  <meta name="description" content="c++">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="最近面试的一些笔记(1.const和static的用法)"/>
+  <meta property="og:site_name" content="Shafeng`s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="Shafeng`s blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Shafeng`s blog</a></h1>
+  <h2><a href="/">road</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">目录</a></li>
+    
+      <li><a href="/about">关于</a></li>
+    
+	<li> <a href="/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-03-08T13:37:28.000Z"><a href="/2014/03/08/constandstatic/">2014-03-08</a></time>
+      
+      
+  
+    <h1 class="title">最近面试的一些笔记(1.const和static的用法)</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="const和static的用法总结">const和static的用法总结</h2><h3 id="const的用法">const的用法</h3><h4 id="1-_const修饰变量和指针">1. const修饰变量和指针</h4><pre><code><span class="keyword">const</span>修饰变量和指针即表示该变量和指针不能被修改,一般在遇到<span class="keyword">const</span> <span class="keyword">char</span>* 的时候会
+产生歧义.<span class="keyword">const</span> <span class="keyword">char</span>* 这种结构的定义其实只要找到<span class="keyword">const</span>修饰的是哪种变量类型就可以
+知道究竟哪个量是不可修改的了.比如, <span class="keyword">const</span> (<span class="keyword">char</span>*) pBuffer <span class="keyword">const</span>修饰的是 <span class="keyword">char</span>*
+类型 ,所以pBuffer作为一个<span class="keyword">char</span>*类型的变量被<span class="keyword">const</span>,pBuffer的值也就是这个指针的值是
+不能被修改的.而 <span class="keyword">const</span> (<span class="keyword">char</span>) *pBuffer <span class="keyword">const</span>修饰的是<span class="keyword">char</span>类型,所以*pBuffer的<span class="keyword">char</span>
+内容是不能被修改的.所以以后要是有人给你出这种题目,抓住<span class="keyword">const</span>修饰的类型就好了.
+</code></pre><h4 id="2-_const修饰函数参数">2. const修饰函数参数</h4><pre><code>这种情况主要是为了保护实参在函数内不被改变,比如 <span class="keyword">void</span> <span class="built_in">function</span>(<span class="keyword">const</span> <span class="built_in">char</span> *p),p所
+指向的内容是不能在函数中被修改的,否则编译不通过.还有 <span class="keyword">int</span> <span class="built_in">function</span>(<span class="keyword">const</span> A &amp;a)这种
+用法,避免拷贝构造函数的调用和析构函数的调用,采用传引用的方法,加<span class="keyword">const</span>修饰可以避免
+函数内部对a对象的修改.
+</code></pre><h4 id="3-_用const修饰函数的返回值">3. 用const修饰函数的返回值</h4><pre><code>如果给以“指针传递”方式的函数返回值加const修饰，那么函数返回值（即指针）的内
+容不能被修改，该返回值只能被赋给加const修饰的同类型指针。
+例如函数:
+<span class="comment"><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">const</span> <span class="keyword">char</span> * <span class="title">GetString</span><span class="params">(<span class="keyword">void</span>)</span></span>;</span><br></pre></td></tr></table></figure></span>
+
+如下语句将出现编译错误：
+<span class="comment"><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">char</span> *str = GetString();</span><br></pre></td></tr></table></figure></span>
+
+正确的用法是
+<span class="comment"><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="keyword">char</span> *str = GetString();</span><br></pre></td></tr></table></figure></span>
+</code></pre><h4 id="4-_const成员函数">4. const成员函数</h4><pre><code>任何不改变成员变量值的成员函数都应该被定义为const成员函数,const放在函数声明后面
+
+<span class="comment"><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> CStack</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="keyword">int</span> <span class="title">GetCount</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">int</span> m_dwNum;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">CStack::GetCount() <span class="keyword">const</span></span><br><span class="line">&#123;</span><br><span class="line">	m_dwNum++; <span class="comment">//编译错误,不能对成员变量进行修改;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></span>
+</code></pre><p> 总之,const的作用就是定义只读,在一定程度上控制程序员的失误操作,保证程序的健壮和稳定.</p>
+<hr>
+<h3 id="static的用法">static的用法</h3><ol>
+<li><p>隐藏</p>
+<p> 在两个源文件中,如果定义了全局的变量和函数,两个源文件中都可以使用这些全局变量和函数,<br> 如果想让变量和函数只在当前文件中起作用,就要加<code>static</code>前缀将函数隐藏在本源文件中.</p>
+</li>
+</ol>
+<ol>
+<li><p>类的静态成员</p>
+<p> 类的静态成员只属于类本身,不属于任何一个类实例,所以没有this指针.如:</p>
+ <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> CStack</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">int</span> m_dwCount;</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">GetCount</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">int</span> CStack::m_dwCount = <span class="number">10</span>;</span><br><span class="line">CStack::GetCount()</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">return</span> m_dwCount;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//静态成员函数不能访问类的私有成员，只能访问类的静态成员,</span></span><br><span class="line"><span class="comment">//实际上，它就是增加了类的访问权限的全局函数</span></span><br></pre></td></tr></table></figure>
+<p> 静态成员必须要在定义中初始化.</p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C/">C++</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>, <a href="/tags/文章/">文章</a>
+  </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/C/">C++</a><small>9</small></li>
+  
+    <li><a href="/tags/DB/">DB</a><small>1</small></li>
+  
+    <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/单词/">单词</a><small>1</small></li>
+  
+    <li><a href="/tags/博客/">博客</a><small>9</small></li>
+  
+    <li><a href="/tags/技术/">技术</a><small>8</small></li>
+  
+    <li><a href="/tags/文章/">文章</a><small>9</small></li>
+  
+    <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 15px;">技术</a> <a href="/tags/文章/" style="font-size: 20px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+  </div>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+<li><a href="http://zipperary.com/" title="Zippera's Blog">Zippera</a></li>
+</ul>
+</div>
+
+  <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1235899094&verifier=a6902c2e&dpc=1"></iframe>
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2016 shafeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

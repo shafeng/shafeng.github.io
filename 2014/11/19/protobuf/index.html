@@ -1,0 +1,208 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>protobuf | Shafeng`s blog</title>
+  <meta name="author" content="shafeng">
+  
+  <meta name="description" content="c++">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="protobuf"/>
+  <meta property="og:site_name" content="Shafeng`s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="Shafeng`s blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Shafeng`s blog</a></h1>
+  <h2><a href="/">road</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">目录</a></li>
+    
+      <li><a href="/about">关于</a></li>
+    
+	<li> <a href="/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-19T06:34:39.000Z"><a href="/2014/11/19/protobuf/">2014-11-19</a></time>
+      
+      
+  
+    <h1 class="title">protobuf</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="os_x系统下xcode中使用protobuf">os x系统下xcode中使用protobuf</h2><p>最近在用cocos2dx做小游戏,希望用到网络部分,所以希望protobuf能在mac平台上工作,baidu和goole了一下后发现大部分都是重复的一两篇技术文章,转来转去,而且按照这两篇文章搞了一下都没有成功,后来发现了两篇实用的文章后才解决了问题,记录一下:</p>
+<p>主要参考两篇在网上流传不广的文章.<br><code>http://blog.csdn.net/deep_coder/article/details/38055275</code><br><code>http://blog.csdn.net/rct1985/article/details/9340641</code></p>
+<p>在 <code>https://code.google.com/p/protobuf/downloads/list</code> 这里下载最新的SourceCode工程, 我用的是2.5.0版本，下载完解压下指定目录下。</p>
+<p>cd yourDir  </p>
+<p>./configure<br>make<br>make check<br>sudo make install  </p>
+<p>安装成功后在需要用到protobuf的xcode工程里:<br>a. 把解压完的目录下 protobuf-2.5.0/src/google整个目录拷贝到cocos2d-x工程下的libs目录下。<br>b. 把解压完的目录下 config.h 拷贝到 libs/google 目录下，主要是放到一些宏定义， 没办法，代码被引用了。<br>c. 删除编译多语言相关文件，google/protobuf/compiler 目录是用来编译多语言的，删除<br>d. 删除单元测试文件 所有 <em>*</em>unittest.cc 文件是测试用例（根据文件名猜的），删除, 还有两个tesst打着的文件夹</p>
+<p>然后编译,会出现这个错误”#error Host architecture was not detected as supported by protobuf”</p>
+<p>解决这个问题的方法是:</p>
+<pre><code>In platform_macros<span class="class">.h</span>, Replace
+
+<span class="id">#else</span>
+<span class="id">#error</span> Host architecture was not detected as supported by protobuf
+<span class="id">#endif</span>
+
+
+By:
+<span class="id">#elif</span> <span class="function"><span class="title">defined</span><span class="params">(__aarch64__)</span></span>
+<span class="hexcolor">#def</span>ine GOOGLE_PROTOBUF_ARCH_ARM <span class="number">1</span>
+<span class="hexcolor">#def</span>ine GOOGLE_PROTOBUF_ARCH_64_BIT <span class="number">1</span>
+<span class="id">#else</span>
+<span class="id">#error</span> Host architecture was not detected as supported by protobuf
+#endif
+</code></pre><p>最后再编译就OK了!</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C/">C++</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>, <a href="/tags/文章/">文章</a>
+  </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/C/">C++</a><small>9</small></li>
+  
+    <li><a href="/tags/DB/">DB</a><small>1</small></li>
+  
+    <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/单词/">单词</a><small>1</small></li>
+  
+    <li><a href="/tags/博客/">博客</a><small>9</small></li>
+  
+    <li><a href="/tags/技术/">技术</a><small>8</small></li>
+  
+    <li><a href="/tags/文章/">文章</a><small>9</small></li>
+  
+    <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 15px;">技术</a> <a href="/tags/文章/" style="font-size: 20px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+  </div>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+<li><a href="http://zipperary.com/" title="Zippera's Blog">Zippera</a></li>
+</ul>
+</div>
+
+  <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1235899094&verifier=a6902c2e&dpc=1"></iframe>
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2016 shafeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
