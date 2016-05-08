@@ -53,6 +53,56 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2016-05-08T09:07:00.000Z"><a href="/2016/05/08/vsftpd/">2016-05-08</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2016/05/08/vsftpd/">Linux上vsftpd的搭建和使用</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="Linux上vsftpd的搭建和使用">Linux上vsftpd的搭建和使用</h2><p>1.查看是否安装vsftp<br>    rpm -qa | grep vsftpd<br>   如果出现：<br>    vsftpd-3.0.2-10.el7.x86_64<br>   说明已经安装了vsftpd，如果没有安装<br>   使用命令安装：<br>    yum -y install vsftpd<br>2,配置vsftpd<br>    whereis vsftpd<br>   出现：<br>    vsftpd: /usr/sbin/vsftpd /etc/vsftpd /usr/share/man/man8/vsftpd.8.gz<br>   到 /etc/vsftpd 目录下配置 vsftpd.conf</p>
+<pre><code><span class="setting">pam_service_name=<span class="value">vsftpd             //设置服务名字，防火墙设置里要用</span></span>
+<span class="setting">userlist_enable=<span class="value"><span class="keyword">YES</span>                 //访问限制打开</span></span>
+<span class="setting">tcp_wrappers=<span class="value"><span class="keyword">YES</span>                    //防火墙打开</span></span>
+<span class="setting">local_root=<span class="value">/haizhan                 //ftp的根目录</span></span>
+<span class="setting">listen_port=<span class="value"><span class="number">19008</span>                   //修改ftp的默认端口<span class="number">21</span>到<span class="number">19008</span></span></span>
+<span class="setting">listen=<span class="value"><span class="keyword">YES</span>                      </span></span>
+<span class="setting">pasv_min_port=<span class="value"><span class="number">19010</span>                 //pasv模式分配给客户端可以连接的端口范围</span></span>
+<span class="setting">pasv_max_port=<span class="value"><span class="number">19020</span></span></span>
+<span class="setting">pasv_promiscuous=<span class="value"><span class="keyword">YES</span>                //关闭pasv的安全检查</span></span>
+<span class="setting">pasv_enable=<span class="value"><span class="keyword">YES</span>                     //使用pasv模式</span></span>
+<span class="setting">pasv_addr_resolve=<span class="value"><span class="keyword">YES</span>               //设置外网地址开关</span></span>
+<span class="setting">pasv_address=<span class="value"><span class="number">120.120</span>.<span class="number">120.120</span>        //如果这台机器需要对外网提供ftp的pasv服务，需要在这里设置本机外网地址</span></span>
+<span class="setting">listen_ipv6=<span class="value"><span class="keyword">NO</span>                      //关闭ipv6才能正常工作</span></span>
+</code></pre><p>上面这些配置全部是必要配置，必须全部配置。</p>
+<p>3,修改FTP系统默认端口<br>   修改 /etc/services<br>    ftp             19008/tcp<br>    ftp             19008/udp</p>
+<p>4,配置访问限制<br>  1.修改/etc/hosts.deny<br>  加入 :<br>    vsftpd:ALL<br>  2.修改/etc/hosts.allow<br>  加入白名单ip，如：<br>    vsftpd:192.168.0.1<br>    vsftpd:120.1.1.1<br>    vsftpd:192.168.0.0/255.255.255.0   //限定网段的，没有试过。</p>
+<p> 5,添加用户<br>    useradd -d /zhanjian -s /sbin/nologin haizhan<br>    passwd haizhan</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-11-23T06:10:53.000Z"><a href="/2015/11/23/2015-11-23 english/">2015-11-23</a></time>
       
       
@@ -1739,84 +1789,6 @@ GLint main(GLint argc,char** argv)
 
 
 
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2014-03-12T17:18:53.000Z"><a href="/2014/03/13/about-gdb/">2014-03-13</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2014/03/13/about-gdb/">about gdb</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="Linux下gdb的使用和命令">Linux下gdb的使用和命令</h2><p>  一般来说，GDB主要帮忙你完成下面四个方面的功能： </p>
-<p>1、启动你的程序，可以按照你的自定义的要求随心所欲的运行程序。</p>
-<p>2、可让被调试的程序在你所指定的调置的断点处停住。（断点可以是条件表达式） </p>
-<p>3、当程序被停住时，可以检查此时你的程序中所发生的事。 </p>
-<p>4、动态的改变你程序的执行环境。 </p>
-<p>(命令行的调试工具却有着图形化工具所不能完成的功能)</p>
-<hr>
-<p>下面介绍gdb常用的命令</p>
-<h3 id="1-_显示源代码,必须在编译的时候使用_-g_参数才可以">1. 显示源代码,必须在编译的时候使用 <em>-g</em> 参数才可以</h3><h4 id="list:">list:</h4><p><code>(gdb) list</code><br>显示当前运行位置的前5行和后5行代码  </p>
-<p><code>(gdb) list function</code><br><code>(gdb) list filename:function</code><br>显示所指向的本文件的函数或者其他文件内函数的前2行和后8行代码  </p>
-<p><code>(gdb) list -</code><br>往前显示代码  </p>
-<p><code>(gdb) list +</code><br>往后显示代码  </p>
-<p>这些命令默认都是显示10行,可以用<code>set listsize 20</code> 修改显示的行数为20行,用<code>show listsize</code>查看当前设置的显示数量.</p>
-<p>list命令还有下面的用法： </p>
-<p><code>(gdb) list &lt;first&gt;, &lt;last&gt;</code><br>显示从first行到last行之间的源代码。  </p>
-<p><code>(gdb) list , &lt;last&gt;</code><br>显示从当前行到last行之间的源代码。 </p>
-<h3 id="2-_查看运行时数据">2. 查看运行时数据</h3><h4 id="print:">print:</h4><p> 在你调试程序时，当程序被停住时，你可以使用<code>print</code>命令（简写命令为<code>p</code>)<code>print</code>命令的格式是：<br> <code>(gdb) print n</code>  </p>
-<p>打印出变量n的值,可以按照指定的进制查看变量的值,比如 <code>int n=5</code> 可以使用 <code>print/x n</code> 命令得到 <code>$26 = 000000101</code>结果<br> <code>(gdb) whatis p</code><br> <code>type = int*</code><br> 显示某个变量的类型</p>
-<p>  <code>(gdb) print Findfuc(1,0)</code><br>  对程序中函数的调用 </p>
-<p>  <code>(gdb) print *pCTable</code><br>  <code>$8={e=reference=’/000’,location=0x0,next=0x0}</code><br>  数据结构和其他复杂对象  </p>
-<p>  <code>(gdb)print h@10</code><br>  <code>$13=(-1,345,23,-234,0,0,0,98,345,10)</code><br>  查看内存中在变量h后面的10个整数，一个动态数组的语法如下所示:base@length  </p>
-<h4 id="display:">display:</h4><p>   还没怎么接触过,留空.</p>
-<h4 id="backtrace:">backtrace:</h4><p>   打印当前的函数调用栈的所有信息。如：<br><code>(gdb) bt</code><br><code>#0 func (n=250) at tst.c:6</code><br><code>#1 0x08048524 in main (argc=1, argv=0xbffff674) at tst.c:30</code><br><code>#2 0x400409ed in __libc_start_main () from /lib/libc.so.6</code><br>从上可以看出函数的调用栈信息：<code>__libc_start_main --&gt; main() --&gt; func()</code> </p>
-<h4 id="frame_up_down:">frame up down:</h4><p>  切换栈<br>  <code>(gdb) frame 1</code><br>  切换到<code>bt</code>显示出来的栈序号为1的栈中去.<br>  比如：<code>frame 0</code>，表示栈顶,上面的例子中就是func所在栈,一般当前程序执行的位置的栈就是栈顶，<code>frame 1</code>，表示栈的第二层,<br>  即 <code>main</code>函数所在栈  </p>
-<p> <code>(gdb) up n</code><br>  表示向栈的上面移动n层，可以不打n，表示向上移动一层。  </p>
-<p> <code>(gdb) down n</code><br>  表示向栈的下面移动n层，可以不打n，表示向下移动一层。  </p>
-<h3 id="3-_断点">3. 断点</h3><h4 id="break:">break:</h4><p>   <code>break</code>命令（可以简写为<code>b</code>）可以用来在调试的程序中设置断点.<br>   <code>(gdb) break filename:line-number</code><br>   在指定文件的指定行上设置一个断点  </p>
-<p>   <code>(gdb) break filename:function-name</code><br>   在指定文件的指定函数入口处设置一个断点  </p>
-<p>   <code>(gdb) break line-or-function if expr</code><br>   在指定行号或者指定函数内设置一个断点,当expr条件成立时断住程序,如:<code>break 46 if dwCount==100</code>  </p>
-<p>   <code>(gdb) info break</code><br>   <code>Num Type Disp Enb Address What</code><br>   <code>1 breakpoint keep y 0x000028bc in CApp:Init at CApp.cpp:155</code><br>   <code>2 breakpoint keep y 0x0000291c in main at GameApp.cpp:168</code><br>   显示断点信息  </p>
-<p>   <code>(gdb) delete breakpoint 1</code><br>   删除编号为1的断点   </p>
-<p>   <code>(gdb) delete breakpoint</code><br>   删除所有断点  </p>
-<h4 id="watch_:">watch :</h4><p>设置观察点,还没怎么用过,留空</p>
-<h4 id="catch_:">catch :</h4><p>设置捕捉点,还没怎么用过,留空</p>
-<h3 id="4-_执行">4. 执行</h3><h4 id="run_continue_next_step_finish_until:">run continue next step finish until:</h4><p>程序执行  </p>
-<p><code>(gdb) set args</code><br>可指定运行时参数。（如：<code>set args 10 20 30 40 50</code>） </p>
-<p><code>(gdb) show args</code><br>查看设置好的运行参数</p>
-<p><code>(gdb) run</code><br>执行程序</p>
-<p><code>(gdb) continue</code><br>执行到下一个断点 相当于vs里的F5快捷键</p>
-<p><code>(gdb) next</code><br>执行下一句代码 相当于vs里的F10快捷键</p>
-<p><code>(gdb) step</code><br>执行下一句代码,如果下一句代码调用了函数,那么进入该函数,相当于vs里的F11快捷键</p>
-<p><code>(gdb) finish</code><br>跳出当前函数,相当于vs里的shift+F11快捷键</p>
-<p><code>(gdb) until</code><br>跳出当前while或者for循环(这个貌似在vs里是没有的,求大牛指点)</p>
-<h4 id="jump:">jump:</h4><p>跳转执行,还没怎么用过,留空</p>
-<h4 id="call:">call:</h4><p>强制调用函数,留空</p>
-<h3 id="5-_其他">5. 其他</h3><p>还有一些关于”信号”,”搜索”等没怎么接触过的命令和用法,有待以后工作和学习中接触到之后再填补.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
 
 <nav id="pagination">
   
@@ -1844,6 +1816,8 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/DB/">DB</a><small>1</small></li>
   
+    <li><a href="/tags/FTP/">FTP</a><small>1</small></li>
+  
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
     <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
@@ -1852,7 +1826,7 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/博客/">博客</a><small>9</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>8</small></li>
+    <li><a href="/tags/技术/">技术</a><small>9</small></li>
   
     <li><a href="/tags/文章/">文章</a><small>9</small></li>
   
@@ -1868,7 +1842,7 @@ GLint main(GLint argc,char** argv)
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 15px;">技术</a> <a href="/tags/文章/" style="font-size: 20px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 20px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 20px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>protobuf | Shafeng`s blog</title>
+  <title>Linux上vsftpd的搭建和使用 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="protobuf"/>
+  <meta property="og:title" content="Linux上vsftpd的搭建和使用"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,39 +52,34 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2014-11-19T06:34:39.000Z"><a href="/2014/11/19/protobuf/">2014-11-19</a></time>
+        <time datetime="2016-05-08T09:07:00.000Z"><a href="/2016/05/08/vsftpd/">2016-05-08</a></time>
       
       
   
-    <h1 class="title">protobuf</h1>
+    <h1 class="title">Linux上vsftpd的搭建和使用</h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="os_x系统下xcode中使用protobuf">os x系统下xcode中使用protobuf</h2><p>最近在用cocos2dx做小游戏,希望用到网络部分,所以希望protobuf能在mac平台上工作,baidu和goole了一下后发现大部分都是重复的一两篇技术文章,转来转去,而且按照这两篇文章搞了一下都没有成功,后来发现了两篇实用的文章后才解决了问题,记录一下:</p>
-<p>主要参考两篇在网上流传不广的文章.<br><code>http://blog.csdn.net/deep_coder/article/details/38055275</code><br><code>http://blog.csdn.net/rct1985/article/details/9340641</code></p>
-<p>在 <code>https://code.google.com/p/protobuf/downloads/list</code> 这里下载最新的SourceCode工程, 我用的是2.5.0版本，下载完解压下指定目录下。</p>
-<p>cd yourDir  </p>
-<p>./configure<br>make<br>make check<br>sudo make install  </p>
-<p>安装成功后在需要用到protobuf的xcode工程里:<br>a. 把解压完的目录下 protobuf-2.5.0/src/google整个目录拷贝到cocos2d-x工程下的libs目录下。<br>b. 把解压完的目录下 config.h 拷贝到 libs/google 目录下，主要是放到一些宏定义， 没办法，代码被引用了。<br>c. 删除编译多语言相关文件，google/protobuf/compiler 目录是用来编译多语言的，删除<br>d. 删除单元测试文件 所有 <em>*</em>unittest.cc 文件是测试用例（根据文件名猜的），删除, 还有两个tesst打着的文件夹</p>
-<p>然后编译,会出现这个错误”#error Host architecture was not detected as supported by protobuf”</p>
-<p>解决这个问题的方法是:</p>
-<pre><code>In platform_macros<span class="class">.h</span>, Replace
-
-<span class="id">#else</span>
-<span class="id">#error</span> Host architecture was not detected as supported by protobuf
-<span class="id">#endif</span>
-
-
-By:
-<span class="id">#elif</span> <span class="function"><span class="title">defined</span><span class="params">(__aarch64__)</span></span>
-<span class="hexcolor">#def</span>ine GOOGLE_PROTOBUF_ARCH_ARM <span class="number">1</span>
-<span class="hexcolor">#def</span>ine GOOGLE_PROTOBUF_ARCH_64_BIT <span class="number">1</span>
-<span class="id">#else</span>
-<span class="id">#error</span> Host architecture was not detected as supported by protobuf
-#endif
-</code></pre><p>最后再编译就OK了!</p>
+        <h2 id="Linux上vsftpd的搭建和使用">Linux上vsftpd的搭建和使用</h2><p>1.查看是否安装vsftp<br>    rpm -qa | grep vsftpd<br>   如果出现：<br>    vsftpd-3.0.2-10.el7.x86_64<br>   说明已经安装了vsftpd，如果没有安装<br>   使用命令安装：<br>    yum -y install vsftpd<br>2,配置vsftpd<br>    whereis vsftpd<br>   出现：<br>    vsftpd: /usr/sbin/vsftpd /etc/vsftpd /usr/share/man/man8/vsftpd.8.gz<br>   到 /etc/vsftpd 目录下配置 vsftpd.conf</p>
+<pre><code><span class="setting">pam_service_name=<span class="value">vsftpd             //设置服务名字，防火墙设置里要用</span></span>
+<span class="setting">userlist_enable=<span class="value"><span class="keyword">YES</span>                 //访问限制打开</span></span>
+<span class="setting">tcp_wrappers=<span class="value"><span class="keyword">YES</span>                    //防火墙打开</span></span>
+<span class="setting">local_root=<span class="value">/haizhan                 //ftp的根目录</span></span>
+<span class="setting">listen_port=<span class="value"><span class="number">19008</span>                   //修改ftp的默认端口<span class="number">21</span>到<span class="number">19008</span></span></span>
+<span class="setting">listen=<span class="value"><span class="keyword">YES</span>                      </span></span>
+<span class="setting">pasv_min_port=<span class="value"><span class="number">19010</span>                 //pasv模式分配给客户端可以连接的端口范围</span></span>
+<span class="setting">pasv_max_port=<span class="value"><span class="number">19020</span></span></span>
+<span class="setting">pasv_promiscuous=<span class="value"><span class="keyword">YES</span>                //关闭pasv的安全检查</span></span>
+<span class="setting">pasv_enable=<span class="value"><span class="keyword">YES</span>                     //使用pasv模式</span></span>
+<span class="setting">pasv_addr_resolve=<span class="value"><span class="keyword">YES</span>               //设置外网地址开关</span></span>
+<span class="setting">pasv_address=<span class="value"><span class="number">120.120</span>.<span class="number">120.120</span>        //如果这台机器需要对外网提供ftp的pasv服务，需要在这里设置本机外网地址</span></span>
+<span class="setting">listen_ipv6=<span class="value"><span class="keyword">NO</span>                      //关闭ipv6才能正常工作</span></span>
+</code></pre><p>上面这些配置全部是必要配置，必须全部配置。</p>
+<p>3,修改FTP系统默认端口<br>   修改 /etc/services<br>    ftp             19008/tcp<br>    ftp             19008/udp</p>
+<p>4,配置访问限制<br>  1.修改/etc/hosts.deny<br>  加入 :<br>    vsftpd:ALL<br>  2.修改/etc/hosts.allow<br>  加入白名单ip，如：<br>    vsftpd:192.168.0.1<br>    vsftpd:120.1.1.1<br>    vsftpd:192.168.0.0/255.255.255.0   //限定网段的，没有试过。</p>
+<p> 5,添加用户<br>    useradd -d /zhanjian -s /sbin/nologin haizhan<br>    passwd haizhan</p>
 
       
     </div>
@@ -94,7 +89,7 @@ By:
         
   
   <div class="tags">
-    <a href="/tags/C/">C++</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>, <a href="/tags/文章/">文章</a>
+    <a href="/tags/FTP/">FTP</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
