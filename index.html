@@ -88,47 +88,6 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2015-11-22T07:59:41.706Z"><a href="/2015/11/22/b+tree/">2015-11-22</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/11/22/b+tree/">Hello World</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <p>Welcome to <a href="http://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick_Start">Quick Start</h2><h3 id="Create_a_new_post">Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run_server">Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate_static_files">Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy_to_remote_sites">Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
         <time datetime="2015-11-12T09:18:53.000Z"><a href="/2015/11/12/explicit&extern/">2015-11-12</a></time>
       
       
@@ -1764,6 +1723,84 @@ GLint main(GLint argc,char** argv)
 <p>　　我一再强调行动与态度，否定主观的归因，大抵是因为我本身是一个偏执的行动派吧。从来觉得与其花时间来抱怨不如着手改善，所有事情认真去做总有解决方案，代价大小的问题。（为了证明这一大段不是信口开河空口大话，我随便自曝一下，EX就是我在7*12的工作强度下遇上的，是一个和我工作与日常交际中完全不搭边的圈子，细节也不说了，每人都有自己擅长的方法，总之，俩人很开心，一块处了三年。虽然最后分开了，现在想来还是惘然。）</p>
 <p>via:知乎</p>
 <p>这片文章很喜欢,作者的价值观跟我非常像,昨天看86届奥斯卡的颁奖礼,<12 years="" a="" slave="">的男主切瓦特·埃加福特(Chiwetel Ejiofor)在片中有这样一句台词:<strong>“I don’t want to survive. I want to live”</strong></12></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-03-12T17:18:53.000Z"><a href="/2014/03/13/about-gdb/">2014-03-13</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/03/13/about-gdb/">about gdb</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="Linux下gdb的使用和命令">Linux下gdb的使用和命令</h2><p>  一般来说，GDB主要帮忙你完成下面四个方面的功能： </p>
+<p>1、启动你的程序，可以按照你的自定义的要求随心所欲的运行程序。</p>
+<p>2、可让被调试的程序在你所指定的调置的断点处停住。（断点可以是条件表达式） </p>
+<p>3、当程序被停住时，可以检查此时你的程序中所发生的事。 </p>
+<p>4、动态的改变你程序的执行环境。 </p>
+<p>(命令行的调试工具却有着图形化工具所不能完成的功能)</p>
+<hr>
+<p>下面介绍gdb常用的命令</p>
+<h3 id="1-_显示源代码,必须在编译的时候使用_-g_参数才可以">1. 显示源代码,必须在编译的时候使用 <em>-g</em> 参数才可以</h3><h4 id="list:">list:</h4><p><code>(gdb) list</code><br>显示当前运行位置的前5行和后5行代码  </p>
+<p><code>(gdb) list function</code><br><code>(gdb) list filename:function</code><br>显示所指向的本文件的函数或者其他文件内函数的前2行和后8行代码  </p>
+<p><code>(gdb) list -</code><br>往前显示代码  </p>
+<p><code>(gdb) list +</code><br>往后显示代码  </p>
+<p>这些命令默认都是显示10行,可以用<code>set listsize 20</code> 修改显示的行数为20行,用<code>show listsize</code>查看当前设置的显示数量.</p>
+<p>list命令还有下面的用法： </p>
+<p><code>(gdb) list &lt;first&gt;, &lt;last&gt;</code><br>显示从first行到last行之间的源代码。  </p>
+<p><code>(gdb) list , &lt;last&gt;</code><br>显示从当前行到last行之间的源代码。 </p>
+<h3 id="2-_查看运行时数据">2. 查看运行时数据</h3><h4 id="print:">print:</h4><p> 在你调试程序时，当程序被停住时，你可以使用<code>print</code>命令（简写命令为<code>p</code>)<code>print</code>命令的格式是：<br> <code>(gdb) print n</code>  </p>
+<p>打印出变量n的值,可以按照指定的进制查看变量的值,比如 <code>int n=5</code> 可以使用 <code>print/x n</code> 命令得到 <code>$26 = 000000101</code>结果<br> <code>(gdb) whatis p</code><br> <code>type = int*</code><br> 显示某个变量的类型</p>
+<p>  <code>(gdb) print Findfuc(1,0)</code><br>  对程序中函数的调用 </p>
+<p>  <code>(gdb) print *pCTable</code><br>  <code>$8={e=reference=’/000’,location=0x0,next=0x0}</code><br>  数据结构和其他复杂对象  </p>
+<p>  <code>(gdb)print h@10</code><br>  <code>$13=(-1,345,23,-234,0,0,0,98,345,10)</code><br>  查看内存中在变量h后面的10个整数，一个动态数组的语法如下所示:base@length  </p>
+<h4 id="display:">display:</h4><p>   还没怎么接触过,留空.</p>
+<h4 id="backtrace:">backtrace:</h4><p>   打印当前的函数调用栈的所有信息。如：<br><code>(gdb) bt</code><br><code>#0 func (n=250) at tst.c:6</code><br><code>#1 0x08048524 in main (argc=1, argv=0xbffff674) at tst.c:30</code><br><code>#2 0x400409ed in __libc_start_main () from /lib/libc.so.6</code><br>从上可以看出函数的调用栈信息：<code>__libc_start_main --&gt; main() --&gt; func()</code> </p>
+<h4 id="frame_up_down:">frame up down:</h4><p>  切换栈<br>  <code>(gdb) frame 1</code><br>  切换到<code>bt</code>显示出来的栈序号为1的栈中去.<br>  比如：<code>frame 0</code>，表示栈顶,上面的例子中就是func所在栈,一般当前程序执行的位置的栈就是栈顶，<code>frame 1</code>，表示栈的第二层,<br>  即 <code>main</code>函数所在栈  </p>
+<p> <code>(gdb) up n</code><br>  表示向栈的上面移动n层，可以不打n，表示向上移动一层。  </p>
+<p> <code>(gdb) down n</code><br>  表示向栈的下面移动n层，可以不打n，表示向下移动一层。  </p>
+<h3 id="3-_断点">3. 断点</h3><h4 id="break:">break:</h4><p>   <code>break</code>命令（可以简写为<code>b</code>）可以用来在调试的程序中设置断点.<br>   <code>(gdb) break filename:line-number</code><br>   在指定文件的指定行上设置一个断点  </p>
+<p>   <code>(gdb) break filename:function-name</code><br>   在指定文件的指定函数入口处设置一个断点  </p>
+<p>   <code>(gdb) break line-or-function if expr</code><br>   在指定行号或者指定函数内设置一个断点,当expr条件成立时断住程序,如:<code>break 46 if dwCount==100</code>  </p>
+<p>   <code>(gdb) info break</code><br>   <code>Num Type Disp Enb Address What</code><br>   <code>1 breakpoint keep y 0x000028bc in CApp:Init at CApp.cpp:155</code><br>   <code>2 breakpoint keep y 0x0000291c in main at GameApp.cpp:168</code><br>   显示断点信息  </p>
+<p>   <code>(gdb) delete breakpoint 1</code><br>   删除编号为1的断点   </p>
+<p>   <code>(gdb) delete breakpoint</code><br>   删除所有断点  </p>
+<h4 id="watch_:">watch :</h4><p>设置观察点,还没怎么用过,留空</p>
+<h4 id="catch_:">catch :</h4><p>设置捕捉点,还没怎么用过,留空</p>
+<h3 id="4-_执行">4. 执行</h3><h4 id="run_continue_next_step_finish_until:">run continue next step finish until:</h4><p>程序执行  </p>
+<p><code>(gdb) set args</code><br>可指定运行时参数。（如：<code>set args 10 20 30 40 50</code>） </p>
+<p><code>(gdb) show args</code><br>查看设置好的运行参数</p>
+<p><code>(gdb) run</code><br>执行程序</p>
+<p><code>(gdb) continue</code><br>执行到下一个断点 相当于vs里的F5快捷键</p>
+<p><code>(gdb) next</code><br>执行下一句代码 相当于vs里的F10快捷键</p>
+<p><code>(gdb) step</code><br>执行下一句代码,如果下一句代码调用了函数,那么进入该函数,相当于vs里的F11快捷键</p>
+<p><code>(gdb) finish</code><br>跳出当前函数,相当于vs里的shift+F11快捷键</p>
+<p><code>(gdb) until</code><br>跳出当前while或者for循环(这个貌似在vs里是没有的,求大牛指点)</p>
+<h4 id="jump:">jump:</h4><p>跳转执行,还没怎么用过,留空</p>
+<h4 id="call:">call:</h4><p>强制调用函数,留空</p>
+<h3 id="5-_其他">5. 其他</h3><p>还有一些关于”信号”,”搜索”等没怎么接触过的命令和用法,有待以后工作和学习中接触到之后再填补.</p>
 
       
     </div>
