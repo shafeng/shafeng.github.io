@@ -63,7 +63,17 @@
     </header>
     <div class="entry">
       
-        <h2 id="Linux上vsftpd的搭建和使用">Linux上vsftpd的搭建和使用</h2><p>1.查看是否安装vsftp<br>    rpm -qa | grep vsftpd<br>   如果出现：<br>    vsftpd-3.0.2-10.el7.x86_64<br>   说明已经安装了vsftpd，如果没有安装<br>   使用命令安装：<br>    yum -y install vsftpd<br>2,配置vsftpd<br>    whereis vsftpd<br>   出现：<br>    vsftpd: /usr/sbin/vsftpd /etc/vsftpd /usr/share/man/man8/vsftpd.8.gz<br>   到 /etc/vsftpd 目录下配置 vsftpd.conf</p>
+        <h2 id="Linux上vsftpd的搭建和使用">Linux上vsftpd的搭建和使用</h2><p>1.查看是否安装vsftp</p>
+<pre><code>rpm -<span class="keyword">qa</span> | <span class="keyword">grep</span> vsftpd
+</code></pre><p>   如果出现：</p>
+<pre><code><span class="tag">vsftpd-3</span><span class="class">.0</span><span class="class">.2-10</span><span class="class">.el7</span><span class="class">.x86_64</span>
+</code></pre><p>   说明已经安装了vsftpd，如果没有安装<br>   使用命令安装：</p>
+<pre><code>yum -y <span class="keyword">install</span> vsftpd
+</code></pre><p>2,配置vsftpd</p>
+<pre><code><span class="title">whereis</span> vsftpd
+</code></pre><p>   出现：</p>
+<pre><code><span class="string">vsftpd:</span> <span class="regexp">/usr/</span>sbin<span class="regexp">/vsftpd /</span>etc<span class="regexp">/vsftpd /</span>usr<span class="regexp">/share/</span>man<span class="regexp">/man8/</span>vsftpd<span class="number">.8</span>.gz
+</code></pre><p>   到 /etc/vsftpd 目录下配置 vsftpd.conf</p>
 <pre><code><span class="setting">pam_service_name=<span class="value">vsftpd             //设置服务名字，防火墙设置里要用</span></span>
 <span class="setting">userlist_enable=<span class="value"><span class="keyword">YES</span>                 //访问限制打开</span></span>
 <span class="setting">tcp_wrappers=<span class="value"><span class="keyword">YES</span>                    //防火墙打开</span></span>
@@ -78,10 +88,19 @@
 <span class="setting">pasv_address=<span class="value"><span class="number">120.120</span>.<span class="number">120.120</span>        //如果这台机器需要对外网提供ftp的pasv服务，需要在这里设置本机外网地址</span></span>
 <span class="setting">listen_ipv6=<span class="value"><span class="keyword">NO</span>                      //关闭ipv6才能正常工作</span></span>
 </code></pre><p>上面这些配置全部是必要配置，必须全部配置。</p>
-<p>3,修改FTP系统默认端口<br>   修改 /etc/services<br>    ftp             19008/tcp<br>    ftp             19008/udp</p>
-<p>4,配置访问限制<br>  1.修改/etc/hosts.deny<br>  加入 :<br>    vsftpd:ALL<br>  2.修改/etc/hosts.allow<br>  加入白名单ip，如：<br>    vsftpd:192.168.0.1<br>    vsftpd:120.1.1.1<br>    vsftpd:192.168.0.0/255.255.255.0   //限定网段的，没有试过。</p>
-<p> 5,添加用户<br>    useradd -d /zhanjian -s /sbin/nologin haizhan<br>    passwd haizhan</p>
-
+<p>3,修改FTP系统默认端口<br>   修改 /etc/services</p>
+<pre><code>ftp             <span class="number">19008</span>/tcp
+ftp             <span class="number">19008</span>/udp
+</code></pre><p>4,配置访问限制<br>  1.修改/etc/hosts.deny<br>  加入 :</p>
+<pre><code><span class="keyword">vsftpd</span>:<span class="literal">ALL</span>
+</code></pre><p>  2.修改/etc/hosts.allow<br>  加入白名单ip，如：</p>
+<pre><code>vsftpd:<span class="number">192.168</span><span class="number">.0</span><span class="number">.1</span>
+vsftpd:<span class="number">120.1</span><span class="number">.1</span><span class="number">.1</span>
+vsftpd:<span class="number">192.168</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">255.255</span><span class="number">.255</span><span class="number">.0</span>   <span class="comment">//限定网段的，没有试过。</span>
+</code></pre><p> 5,添加用户</p>
+<pre><code>useradd <span class="operator">-d</span> /zhanjian <span class="operator">-s</span> /sbin/nologin haizhan
+passwd haizhan
+</code></pre>
       
     </div>
     <footer>
