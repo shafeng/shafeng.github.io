@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>源代码 | Shafeng`s blog</title>
+  <title>gstack,strace,gcore(Linux) | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  
+  <meta property="og:title" content="gstack,strace,gcore(Linux)"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -46,25 +46,65 @@
 </nav>
 <div class="clearfix"></div></header>
   <div id="content" class="inner">
-    <div id="main-col" class="alignleft"><div id="wrapper">
-<h2 class="archive-title tag">源代码</h2>
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-06-27T07:46:53.000Z"><a href="/2017/06/27/gstack_strace/">2017-06-27</a></time>
+      
+      
+  
+    <h1 class="title">gstack,strace,gcore(Linux)</h1>
+  
 
+    </header>
+    <div class="entry">
+      
+        <h2 id="关于Linux程序运行中查看堆栈的一些命令">关于Linux程序运行中查看堆栈的一些命令</h2><pre><code>最近项目上遇到一些问题，服务器程序在运行的时候cpu特别高，尤其是逻辑线程，一度达到<span class="number">99</span>%。为了查找问题，使用了一些之前没有用过的命令，加上我之前用过的几个命令，写一篇记录
+</code></pre><h3 id="gstack">gstack</h3><pre><code>gstack 线程<span class="property">id</span>,例如:gstack <span class="number">2939</span>,可以查看到当前线程的堆栈信息,如果程序的当前线程占cpu特别高,可能会出现死循环或者其他症状,我们可以通过使用gstack命令查看当前线程的堆栈信息来诊断问题.
+</code></pre><h3 id="strace">strace</h3><pre><code>strace -T -r -c -<span class="tag">p</span> 线程id,例如:strace -T -r -c -<span class="tag">p</span> <span class="number">2939</span>,可以得到当前线程的所有系统调用统计,停止统计的时候必须自己手动退出,会输出使用命令到停止统计期间的信息.
+</code></pre><h3 id="gcore">gcore</h3><pre><code>gcore 进程<span class="property">id</span>,例如:gcore <span class="number">12345</span>,可以得到当前进程的所有线程的堆栈信息.
+</code></pre><p>一些总结,通过以上这些命令可以间接观察到程序当前的运行状态和运行位置.给予程序开发者更多的讯息以诊断程序当前可能出现的问题,有一个需要注意的地方,gstack和strace在运行期间不会影响到程序本身的运行,而gcore会将程序暂停,影响程序的正常工作.</p>
 
-  <div class="archive">
-    
-      <article class="post">
-        <div class="post-content">
-          <header>
-            <div class="icon"></div>
-            <time datetime="2014-03-19T15:19:38.000Z"><a href="/2014/03/19/gameloft-puyo/">2014-03-19</a></time>
-            
-              <h1 class="title"><a href="/2014/03/19/gameloft-puyo/">gameloft puyo</a></h1>
-            
-          </header>
-        </div>
-      </article>
-    
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>, <a href="/tags/文章/">文章</a>
   </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
 </div></div>
     <aside id="sidebar" class="alignright">
   <div class="search">

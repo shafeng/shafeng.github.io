@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>2015-11-23 单词 | Shafeng`s blog</title>
+  <title>mysql | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="2015-11-23 单词"/>
+  <meta property="og:title" content="mysql"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,19 +52,54 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2015-11-23T06:10:53.000Z"><a href="/2015/11/23/2015-11-23 english/">2015-11-23</a></time>
+        <time datetime="2017-06-10T04:00:00.000Z"><a href="/2017/06/10/mysql/">2017-06-10</a></time>
       
       
   
-    <h1 class="title">2015-11-23 单词</h1>
+    <h1 class="title">mysql</h1>
   
 
     </header>
     <div class="entry">
       
-        <p>optimize </p>
-<h2 id="vt-_使最优化，使尽可能有效;">vt.        使最优化，使尽可能有效;</h2><p>inhibit</p>
-<h2 id="v-_抑制;_禁止;">v.        抑制; 禁止;</h2><p>rough<br>adj.    粗糙的，崎岖不平的; 粗鲁的; 狂暴的，汹涌的; 未经加工的;<br>vt.        粗暴地对待; 使粗糙; 草拟;<br>n.        粗糙的部分; 艰难，苦难;</p>
+        <h2 id="Mysql的一些性能优化记录">Mysql的一些性能优化记录</h2><p>项目上经过合服等操作,单服的玩家数量一度超过500W,一些排行榜数据和玩家摘要数据在程序启动时就要从数据库中加载,数据量的增大也延长了服务器程序的启动时间,一些必要的优化就在所难免了.贴一下数据的配置.做一下记录</p>
+<pre><code>[client]
+<span class="constant">socket</span> = /tmp/mysql.sock
+
+
+[mysqld_multi]
+<span class="constant">log</span>        = /data/mysql_db/mysqld_multi.log
+<span class="constant">mysqld</span>     = /usr/bin/mysqld_safe
+<span class="constant">mysqladmin</span> = /usr/bin/mysqladmin
+<span class="constant">user</span>       = shutdown_user
+
+<span class="comment">###########################################################################################</span>
+[mysqld4306]
+<span class="constant">port</span>       = 4306
+<span class="constant">socket</span>     = /tmp/mysql_4306.sock
+pid-file   = /tmp/mysql_4306.pid
+<span class="constant">datadir</span>    = /data/mysql_db/4306
+<span class="constant">default_storage_engine</span> = InnoDB
+<span class="constant">sql_mode</span>=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
+skip-name-resolve
+<span class="constant">max_connections</span> = 1000
+<span class="constant">innodb_flush_log_at_trx_commit</span> = 2
+<span class="constant">innodb_flush_log_at_timeout</span>     =1
+<span class="constant">innodb_buffer_pool_size</span> = 24080M
+<span class="constant">innodb_log_buffer_size</span> = 8M
+<span class="constant">innodb_log_file_size</span> = 256M
+log-bin=/data/mysql_binlog/4306/mysql-bin
+<span class="constant">binlog_format</span>=MIXED
+<span class="constant">binlog_cache_size</span> = 1M
+<span class="constant">max_binlog_size</span>=512M
+log_warnings
+slow_query_log
+<span class="constant">long_query_time</span> = 2
+server-id = 1
+<span class="constant">expire_logs_days</span> = 5
+secure-file-priv=
+<span class="constant">tmpdir</span>=/data/mysql_tmp
+</code></pre><p>innodb_buffer_pool_size 这个选项调大可以增加innodb的内存大小,减少io操作<br>expire_logs_days 这个选项可以指定binlog保存的天数,binlog占用硬盘空间特别大,但是binlog又是恢复数据库时最宝贵的log,所以如何权衡这个问题还得结合自己项目的需要<br>secure-file-priv= 这个选项可以让其他用户写入数据,项目在合服时无法写入数据,加入这个配置可以降低数据库的安全性检查<br>tmpdir=/data/mysql_tmp 这个选项可以指定mysql在运行时使用的硬盘空间地址,默认的地址是在系统盘,而一般系统盘的空间较小,把目录指定到空间较大的目录可以有效提高数据库的io效率</p>
 
       
     </div>
@@ -74,7 +109,7 @@
         
   
   <div class="tags">
-    <a href="/tags/单词/">单词</a>, <a href="/tags/博客/">博客</a>
+    <a href="/tags/DB/">DB</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>

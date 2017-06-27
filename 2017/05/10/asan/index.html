@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>2015-11-23 单词 | Shafeng`s blog</title>
+  <title>asan(Linux) | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="2015-11-23 单词"/>
+  <meta property="og:title" content="asan(Linux)"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,19 +52,20 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2015-11-23T06:10:53.000Z"><a href="/2015/11/23/2015-11-23 english/">2015-11-23</a></time>
+        <time datetime="2017-05-10T07:55:00.000Z"><a href="/2017/05/10/asan/">2017-05-10</a></time>
       
       
   
-    <h1 class="title">2015-11-23 单词</h1>
+    <h1 class="title">asan(Linux)</h1>
   
 
     </header>
     <div class="entry">
       
-        <p>optimize </p>
-<h2 id="vt-_使最优化，使尽可能有效;">vt.        使最优化，使尽可能有效;</h2><p>inhibit</p>
-<h2 id="v-_抑制;_禁止;">v.        抑制; 禁止;</h2><p>rough<br>adj.    粗糙的，崎岖不平的; 粗鲁的; 狂暴的，汹涌的; 未经加工的;<br>vt.        粗暴地对待; 使粗糙; 草拟;<br>n.        粗糙的部分; 艰难，苦难;</p>
+        <h2 id="惊天大霹雳，超级好用的Linux程序内存检查工具，AddressSanitizer_(ASan)">惊天大霹雳，超级好用的Linux程序内存检查工具，AddressSanitizer (ASan)</h2><p>最近线上的程序总是莫名其妙崩溃,因为我们的项目使用了分布负载的机制,对于玩家的影响其实很小,但是我肯定是忍不了的…程序崩溃的core文件里面完全找不到问题所在,初步分析应该是野指针导致,仔细分析程序之后并没有发现内存释放后没有置null的情况,很可能是多线程导致的,然而代码量太大,大海捞针实在是无法找到问题所在,所以我找到了asan,项目之前一直用gcc4.4编译,完全不知道asan的存在,asan是gcc4.8以上gcc自带的内存检测库,开发自google,在gcc4.8版本以上编译链接的时候加入指定的参数即可,非常的方便好用,而且对程序的性能影响并不大,如果你的程序平时耗费的cpu和内存资源不超过50%,那么完全可以把加入asan的程序放到线上去跑.</p>
+<p>首先在编译机上升级gcc,我直接升级到了最新版本gcc6.3版本(写这篇记录的时候最新版已经到gcc7.1了),升级后系统库中会新加入libasan,我们使用asan的功能都是来自于这里.<br>然后对代码进行编译和链接,编译时使用 -g -O2 -fsanitize=address -fno-omit-frame-pointer .-fsanitize=address命令就是将asan编译进来,这样编译的.o文件在运行时stack上申请的内存都会被asan接管,如果出问题asan会第一时间输出报告,如内存越界和各种非法访问. -fno-omit-frame-pointer可以防止一些优化导致指针丧失可读性.  链接时使用-fsanitize=address -fno-omit-frame-pointer选项可以让程序在heap上申请的内存被asan接管,这样asan会监控new和delete来输出内存泄漏的报告.</p>
+<p>大功告成,使用asan编译和链接的程序生成好之后放到了线上环境运营,很快出现了一次宕机,asan会直接把自己的输出当做error输出,你可以查看到当前导致宕机的内存位置和变量名,文件行数,变量来源,线程信息等等非常全面的信息,得到这些信息后很快就分析出原来崩溃来自一个多线程共享的模块,而当前模块在多线程竞争资源的地方没有加锁,导致同一块内存被写坏. 问题完美解决,程序再也不会宕机了.</p>
+<p>总结一下,asan在检测程序内存方面的功能实在是强大,之前也用过valgrind来检查内存泄漏,但是valgrind对性能的影响实在是太大,完全不能放到线上环境这样真实的环境下测试,而且asan给出的问题报告相当详细,基本上看一次错误报告就能解决当前导致宕机的问题,而core文件的信息由于优化和其他程序上下文的差异会导致提供的信息基本上没什么作用.宕机十次,十个core文件也无法准确定位某些野指针错误的问题.对于asan,只有一个词能表达我的心情,那就是相见恨晚…asan你值得拥有,谁用谁知道.</p>
 
       
     </div>
@@ -74,7 +75,7 @@
         
   
   <div class="tags">
-    <a href="/tags/单词/">单词</a>, <a href="/tags/博客/">博客</a>
+    <a href="/tags/C/">C++</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
