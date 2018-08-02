@@ -522,41 +522,6 @@ passwd haizhan
     <header>
       
         <div class="icon"></div>
-        <time datetime="2015-11-23T06:10:53.000Z"><a href="/2015/11/23/2015-11-23 english/">2015-11-23</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/11/23/2015-11-23 english/">2015-11-23 单词</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <p>optimize </p>
-<h2 id="vt-_使最优化，使尽可能有效;">vt.        使最优化，使尽可能有效;</h2><p>inhibit</p>
-<h2 id="v-_抑制;_禁止;">v.        抑制; 禁止;</h2><p>rough<br>adj.    粗糙的，崎岖不平的; 粗鲁的; 狂暴的，汹涌的; 未经加工的;<br>vt.        粗暴地对待; 使粗糙; 草拟;<br>n.        粗糙的部分; 艰难，苦难;</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
         <time datetime="2015-11-12T09:18:53.000Z"><a href="/2015/11/12/explicit&extern/">2015-11-12</a></time>
       
       
@@ -572,61 +537,6 @@ passwd haizhan
 <h2 id="extern">extern</h2><h3 id="extern可置于变量或者函数前，以表示变量或者函数的定义在别的文件中，提示编译器遇到此变量或函数时，在其它模块中寻找其定义。">extern可置于变量或者函数前，以表示变量或者函数的定义在别的文件中，提示编译器遇到此变量或函数时，在其它模块中寻找其定义。</h3><p>下面这段代码没有使用任何 extern 关键字，编译中会报错。<br>    <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//A.cpp</span></span><br><span class="line"><span class="keyword">int</span> i;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//B.cpp</span></span><br><span class="line"><span class="keyword">int</span> i;</span><br></pre></td></tr></table></figure></p>
 <p>添加extren关键字后可以编译通过，提示编译器i变量定义在其他模块中<br>    <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//A.cpp</span></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">int</span> i;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">	i=<span class="number">100</span>;<span class="comment">//试图使用B中定义的全局变量</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//B.cpp</span></span><br><span class="line"><span class="keyword">int</span> i;</span><br></pre></td></tr></table></figure></p>
 <h3 id="extern也可用来进行链接指定。">extern也可用来进行链接指定。</h3><p>C++支持函数重载，而过程式语言C则不支持。函数被C++编译后在符号库中的名字与C语言的不同。例如，假设某个函数的原型为：<br>void foo( int x, int y );该函数被C编译器编译后在符号库中的名字为_foo，而C++编译器则会产生像_foo_int_int之类的名字<br>（不同的编译器可能生成的名字不同，但是都采用了相同的机制，生成的新名字称为“mangled name”）。_foo_int_int这样的名字<br>包含了函数名、函数参数数量及类型信息，C++就是靠这种机制来实现函数重载的。例如，在C++中，函数void foo( int x, int y )<br>与void foo( int x, float y )编译生成的符号是不相同的，后者为_foo_int_float。同样地，C++中的变量除支持局部变量外，<br>还支持类成员变量和全局变量。用户所编写程序的类成员变量可能与全局变量同名，我们以”.”来区分。而本质上，编译器在进行编译时，<br>与函数的处理相似，也为类中的变量取了一个独一无二的名字，这个名字与用户程序中同名的全局变量名字不同。<br>在C++中引用C语言中的函数和变量，在包含C语言头文件（假设为cExample.h）时，需进行下列处理：<br>    <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="preprocessor">#<span class="keyword">include</span> <span class="string">"cExample.h"</span>	</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
-<pre><code><span class="keyword">class</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-};
-<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">char</span>);
-    foo(<span class="keyword">char</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    foo(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
-</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
 
       
     </div>
@@ -750,6 +660,61 @@ passwd haizhan
     <span class="keyword">return</span> <span class="number">1</span>;
 }
 </code></pre><p>修改为类成员函数后就是这样了,这里遇到一个问题,<code>main</code>函数中调用<code>get_attr</code>时分成了两条代码,<br>因为写成这样编译报错<code>attr.get_attr(bind(&amp;MyClass::set_prop,&amp;myclass,_1,_2,std::bind(&amp;Info::new_info,&amp;info)));</code><br>我估计可能是类型不匹配之类的错误.总之分成两条代码就OK了. </p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
+<pre><code><span class="keyword">class</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+};
+<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">char</span>);
+    foo(<span class="keyword">char</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    foo(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
+</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
 
       
     </div>
@@ -905,6 +870,46 @@ main (<span class="built_in">int</span> argc, char* argv[])
 
 
 
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-02-12T07:12:53.000Z"><a href="/2015/02/12/libcurl/">2015-02-12</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/02/12/libcurl/">libcurl</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="Windows下libcurl静态库的编译和使用">Windows下libcurl静态库的编译和使用</h2><p>  最近在玩一个游戏,这游戏的服务器是http通信的,就想伪造一些数据看看.想起了curl,于是去下载,结果编译半天总是出错,又浪费了好多时间,现在成功了,记下来.</p>
+<hr>
+<p> 首先从这里下载最新的源代码<br>  <a href="http://curl.haxx.se/download.html" target="_blank" rel="external">http://curl.haxx.se/download.html</a><br> libcurl是源码,curl是一个http的工具,反正我用libcurl的源码就够了.</p>
+<p> 打开找到相应的VC版本工程用VS打开,我用的是VS2012,相应的版本是VC11.</p>
+<p> 一开始编译出错,因为这个版本里包含了ssh和ssl的第三方库,我也用不着所以在预编译宏里把关于ssl和ssh的都去掉.</p>
+<p> 然后继续编译lib静态库成功了,新建测试工程加入头文件和生成的附加库libcurld.lib,发现有无法识别的外部符号错误,网上找了半天解决方法.</p>
+<p> 最后的解决方法是. libcurl的预编译设定为<br><code>WIN32</code><br><code>_DEBUG</code><br><code>BUILDING_LIBCURL</code><br> 测试项目的预编译设置为<br><code>BUILDING_LIBCURL</code><br> 并且在测试项目头文件中添加以下内容<br><code>#define CURL_STATICLIB</code><br><code>#if defined(_DEBUG)</code><br><code>#pragma comment(lib, &quot;libcurld.lib&quot;)</code><br><code>#else</code><br><code>#pragma comment(lib, &quot;libcurl.lib&quot;)</code><br><code>#endif</code><br><code>#pragma comment(lib,&quot;winmm.lib&quot; )</code><br><code>#pragma comment(lib,&quot;ws2_32.lib&quot; )</code><br><code>#pragma comment(lib,&quot;wldap32.lib&quot; )</code></p>
+<p>再次编译,搞定.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
 
 <nav id="pagination">
   
@@ -940,9 +945,7 @@ main (<span class="built_in">int</span> argc, char* argv[])
   
     <li><a href="/tags/Redis/">Redis</a><small>1</small></li>
   
-    <li><a href="/tags/单词/">单词</a><small>1</small></li>
-  
-    <li><a href="/tags/博客/">博客</a><small>13</small></li>
+    <li><a href="/tags/博客/">博客</a><small>12</small></li>
   
     <li><a href="/tags/技术/">技术</a><small>13</small></li>
   
@@ -960,7 +963,7 @@ main (<span class="built_in">int</span> argc, char* argv[])
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 17.5px;">C++</a> <a href="/tags/DB/" style="font-size: 12.5px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 17.5px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 16px;">C++</a> <a href="/tags/DB/" style="font-size: 12px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 14px;">Linux</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/博客/" style="font-size: 18px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 16px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 

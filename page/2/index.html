@@ -53,46 +53,6 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2015-02-12T07:12:53.000Z"><a href="/2015/02/12/libcurl/">2015-02-12</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/02/12/libcurl/">libcurl</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="Windows下libcurl静态库的编译和使用">Windows下libcurl静态库的编译和使用</h2><p>  最近在玩一个游戏,这游戏的服务器是http通信的,就想伪造一些数据看看.想起了curl,于是去下载,结果编译半天总是出错,又浪费了好多时间,现在成功了,记下来.</p>
-<hr>
-<p> 首先从这里下载最新的源代码<br>  <a href="http://curl.haxx.se/download.html" target="_blank" rel="external">http://curl.haxx.se/download.html</a><br> libcurl是源码,curl是一个http的工具,反正我用libcurl的源码就够了.</p>
-<p> 打开找到相应的VC版本工程用VS打开,我用的是VS2012,相应的版本是VC11.</p>
-<p> 一开始编译出错,因为这个版本里包含了ssh和ssl的第三方库,我也用不着所以在预编译宏里把关于ssl和ssh的都去掉.</p>
-<p> 然后继续编译lib静态库成功了,新建测试工程加入头文件和生成的附加库libcurld.lib,发现有无法识别的外部符号错误,网上找了半天解决方法.</p>
-<p> 最后的解决方法是. libcurl的预编译设定为<br><code>WIN32</code><br><code>_DEBUG</code><br><code>BUILDING_LIBCURL</code><br> 测试项目的预编译设置为<br><code>BUILDING_LIBCURL</code><br> 并且在测试项目头文件中添加以下内容<br><code>#define CURL_STATICLIB</code><br><code>#if defined(_DEBUG)</code><br><code>#pragma comment(lib, &quot;libcurld.lib&quot;)</code><br><code>#else</code><br><code>#pragma comment(lib, &quot;libcurl.lib&quot;)</code><br><code>#endif</code><br><code>#pragma comment(lib,&quot;winmm.lib&quot; )</code><br><code>#pragma comment(lib,&quot;ws2_32.lib&quot; )</code><br><code>#pragma comment(lib,&quot;wldap32.lib&quot; )</code></p>
-<p>再次编译,搞定.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
         <time datetime="2014-11-19T06:34:39.000Z"><a href="/2014/11/19/protobuf/">2014-11-19</a></time>
       
       
@@ -1532,9 +1492,7 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/Redis/">Redis</a><small>1</small></li>
   
-    <li><a href="/tags/单词/">单词</a><small>1</small></li>
-  
-    <li><a href="/tags/博客/">博客</a><small>13</small></li>
+    <li><a href="/tags/博客/">博客</a><small>12</small></li>
   
     <li><a href="/tags/技术/">技术</a><small>13</small></li>
   
@@ -1552,7 +1510,7 @@ GLint main(GLint argc,char** argv)
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 17.5px;">C++</a> <a href="/tags/DB/" style="font-size: 12.5px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 17.5px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 16px;">C++</a> <a href="/tags/DB/" style="font-size: 12px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 14px;">Linux</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/博客/" style="font-size: 18px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 16px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 
