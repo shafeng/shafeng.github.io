@@ -1,0 +1,414 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>codis_1 | Shafeng`s blog</title>
+  <meta name="author" content="shafeng">
+  
+  <meta name="description" content="c++">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="codis_1"/>
+  <meta property="og:site_name" content="Shafeng`s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="Shafeng`s blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Shafeng`s blog</a></h1>
+  <h2><a href="/">road</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">目录</a></li>
+    
+      <li><a href="/about">关于</a></li>
+    
+	<li> <a href="/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-05-07T04:00:00.000Z"><a href="/2018/05/07/codis_1/">2018-05-07</a></time>
+      
+      
+  
+    <h1 class="title">codis_1</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="Redis集群，Codis的安装和使用">Redis集群，Codis的安装和使用</h2><p>项目上经过了多次合服和长达两年多的运营，单服玩家已经超过了600W,项目最原始的架构是将所有玩家的摘要数据在服务器启动时从数据库中读取，如果只有几万人或者及几十万人，启动速度基本上就是一两分钟的样子，没有什么压力，但是600W玩家的所有摘要数据全部加载需要的时间可能超过几十分钟，为此项目使用了Redis，将玩家摘要数据和排行榜数据全部都转移到了Redis中，我使用了Codis，基于go开发的redis集群，可以无限扩展Redis的内存大小。记录一下部署和使用Codis的全过程。</p>
+<h3 id="安装环境">安装环境</h3><p>codis-proxy相当于redis，即连接codis-proxy和连接redis是没有任何区别的，codis-proxy无状态，不负责记录是否在哪保存，数据在zookeeper记录，即codis proxy向zookeeper查询key的记录位置，proxy 将请求转发到一个组进行处理，一个组里面有一个master和一个或者多个slave组成，默认有1024个槽位，其把不同的槽位的内容放在不通的group。codis是基于go语言编写的，因此要安装go语言环境。每台服务器安装java环境和zookeeper，zookeeper集群最少需要3台服务器。</p>
+<h4 id="安装_zookeeper">安装 zookeeper</h4><pre><code>wget http:<span class="comment">//219.238.7.67/files/205200000AF1D7B9/mirrors.hust.edu.cn/apache/zookeeper/zookeeper-3.4.11/zookeeper-3.4.11.tar.gz</span>
+tar -xzf zookeeper-<span class="number">3.4</span>.<span class="number">11</span><span class="class">.tar</span><span class="class">.gz</span> -C /data/service
+</code></pre><h4 id="安装_java">安装 java</h4><pre><code>tar zxf jdk-<span class="number">8u</span>131-linux-x64.gz
+mv jdk1<span class="number">.8</span><span class="number">.0</span>_131 /usr/local/
+</code></pre><h4 id="安装_go_编译环境">安装 go 编译环境</h4><pre><code># cd /usr/local/src
+[root@node1 src]# yum <span class="operator"><span class="keyword">install</span> -y gcc glibc gcc-<span class="keyword">c</span>++ make git
+[root@node1 src]# wget https://<span class="keyword">storage</span>.googleapis.com/golang/go1<span class="number">.7</span><span class="number">.3</span>.linux-amd64.tar.gz
+[root@node1 src]# tar zxf go1<span class="number">.7</span><span class="number">.3</span>.linux-amd64.tar.gz
+[root@node1 src]# mv <span class="keyword">go</span> /usr/<span class="keyword">local</span>/
+[root@node1 src]# mkdir /usr/<span class="keyword">local</span>/<span class="keyword">go</span>/<span class="keyword">work</span>
+[root@node1 src]# vim /root/.bash_profile
+
+<span class="keyword">export</span> <span class="keyword">PATH</span>=$<span class="keyword">PATH</span>:/usr/<span class="keyword">local</span>/<span class="keyword">go</span>/<span class="keyword">bin</span>
+<span class="keyword">export</span> GOROOT=/usr/<span class="keyword">local</span>/<span class="keyword">go</span>
+<span class="keyword">export</span> GOPATH=/usr/<span class="keyword">local</span>/<span class="keyword">go</span>/<span class="keyword">work</span>
+<span class="keyword">path</span>=$<span class="keyword">PATH</span>:$HOME/<span class="keyword">bin</span>:$GOROOT/<span class="keyword">bin</span>:$GOPATH/<span class="keyword">bin</span>
+[root@node1 src]# <span class="keyword">source</span> /root/.bash_profile
+
+[root@node1 src]# echo $GOPATH
+/usr/<span class="keyword">local</span>/<span class="keyword">go</span>/<span class="keyword">work</span>
+[root@node1 ~]# <span class="keyword">go</span> <span class="keyword">version</span>
+<span class="keyword">go</span> <span class="keyword">version</span> go1<span class="number">.7</span><span class="number">.3</span> linux/amd64</span>
+</code></pre><h4 id="zookeeper配置文件">zookeeper配置文件</h4><pre><code><span class="preprocessor"># 中使用的基本时间单位, 毫秒值.</span>
+tickTime=<span class="number">2000</span>
+<span class="preprocessor"># follower和leader之间的最长心跳时间 initLimit * tickTime 毫秒超时</span>
+initLimit=<span class="number">10</span>
+<span class="preprocessor"># </span>
+<span class="preprocessor"># follower和leader之间 同步数据的最大时间 syncLimit * tickTime 毫秒超时</span>
+syncLimit=<span class="number">5</span>
+<span class="preprocessor"># 数据目录. 可以是任意目录.</span>
+dataDir=/data/service/zookeeper-data/data
+<span class="preprocessor"># log目录</span>
+dataLogDir=/data/service/zookeeper-data/logs
+<span class="preprocessor"># 防止启动失败一个配置，不知道干啥的</span>
+quorumListenOnAllIPs=<span class="literal">true</span>
+<span class="preprocessor"># 监听client连接的端口号.</span>
+clientPort=<span class="number">19021</span>
+<span class="preprocessor"># 客户端连接的最大数量。</span>
+<span class="preprocessor">#maxClientCnxns=<span class="number">60</span></span>
+<span class="preprocessor"># 维护相关的</span>
+<span class="preprocessor">#autopurge.snapRetainCount=<span class="number">3</span></span>
+<span class="preprocessor">#autopurge.purgeInterval=<span class="number">1</span></span>
+
+server<span class="number">.1</span> = <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">19022</span>:<span class="number">19029</span>
+server<span class="number">.2</span> = <span class="number">172.31</span><span class="number">.0</span><span class="number">.17</span>:<span class="number">19022</span>:<span class="number">19029</span>
+server<span class="number">.3</span> = <span class="number">172.31</span><span class="number">.0</span><span class="number">.79</span>:<span class="number">19022</span>:<span class="number">19029</span>
+</code></pre><p>详细解释：<br>            tickTime：这个时间是作为 Zookeeper 服务器之间或客户端与服务器之间维持心跳的时间间隔，也就是每个 tickTime 时间就会发送一个心跳。<br>            dataDir：顾名思义就是 Zookeeper 保存数据的目录，默认情况下，Zookeeper 将写数据的日志文件也保存在这个目录里。<br>            clientPort：这个端口就是客户端连接 Zookeeper 服务器的端口，Zookeeper 会监听这个端口，接受客户端的访问请求。<br>            initLimit：这个配置项是用来配置 Zookeeper 接受客户端（这里所说的客户端不是用户连接 Zookeeper 服务器的客户端，而是 Zookeeper 服务器集群中连接到 Leader 的 Follower 服务器）初始化连接时最长能忍受多少个心跳时间间隔数。当已经超过 5个心跳的时间（也就是 tickTime）长度后 Zookeeper 服务器还没有收到客户端的返回信息，那么表明这个客户端连接失败。总的时间长度就是 10<em>6000=60 秒<br>            syncLimit：这个配置项标识 Leader 与 Follower 之间发送消息，请求和应答时间长度，最长不能超过多少个 tickTime 的时间长度，总的时间长度就是 5</em>6000=30 秒<br>            server.A=B：C：D：其中 A 是一个数字，表示这个是第几号服务器；B 是这个服务器的 ip 地址；C 表示的是这个服务器与集群中的 Leader 服务器交换信息的端口；D 表示的是万一集群中的 Leader 服务器挂了，需要一个端口来重新进行选举，选出一个新的 Leader，而这个端口就是用来执行选举时服务器相互通信的端口。如果是伪集群的配置方式，由于 B 都是一样，所以不同的 Zookeeper 实例通信端口号不能一样，所以要给它们分配不同的端口号。</p>
+<p>启动zookeeper</p>
+<pre><code><span class="regexp">/data/</span>service<span class="regexp">/zookeeper-3.4.11/</span>bin<span class="regexp">/zkServer.sh  /</span>data<span class="regexp">/service/</span>zookeeper-<span class="number">3.4</span>.<span class="number">11</span><span class="regexp">/conf/</span>zoo.cfg
+</code></pre><h3 id="安装部署codis">安装部署codis</h3><h4 id="下载编译codis3-2版本">下载编译codis3.2版本</h4><p>我直接使用了编译好的一个版本</p>
+<h4 id="codis配置文件">codis配置文件</h4><hr>
+<font color="#FF6347">/codis/config/dashboard.toml</font>
+
+<pre><code><span class="comment">##################################################</span>
+<span class="comment">#                                                #</span>
+<span class="comment">#                  Codis-Dashboard               #</span>
+<span class="comment">#                                                #</span>
+<span class="comment">##################################################</span>
+
+<span class="comment"># Set Coordinator, only accept "zookeeper" &amp; "etcd" &amp; "filesystem".</span>
+<span class="comment"># for zookeeper/etcd, coorinator_auth accept "user:password" </span>
+<span class="comment"># Quick Start</span>
+<span class="comment">#coordinator_name = "filesystem"</span>
+<span class="comment">#coordinator_addr = "/tmp/codis"</span>
+<span class="setting">coordinator_name = <span class="value"><span class="string">"zookeeper"</span></span></span>
+<span class="setting">coordinator_addr = <span class="value"><span class="string">"172.31.0.84:19021"</span></span></span>
+<span class="comment">#coordinator_auth = ""</span>
+
+<span class="comment"># Set Codis Product Name/Auth.</span>
+<span class="setting">product_name = <span class="value"><span class="string">"codis-warship"</span></span></span>
+<span class="setting">product_auth = <span class="value"><span class="string">""</span></span></span>
+
+<span class="comment"># Set bind address for admin(rpc), tcp only.</span>
+<span class="setting">admin_addr = <span class="value"><span class="string">"0.0.0.0:18080"</span></span></span>
+
+<span class="comment"># Set arguments for data migration (only accept 'sync' &amp; 'semi-async').</span>
+<span class="setting">migration_method = <span class="value"><span class="string">"semi-async"</span></span></span>
+<span class="setting">migration_parallel_slots = <span class="value"><span class="number">100</span></span></span>
+<span class="setting">migration_async_maxbulks = <span class="value"><span class="number">200</span></span></span>
+<span class="setting">migration_async_maxbytes = <span class="value"><span class="string">"32mb"</span></span></span>
+<span class="setting">migration_async_numkeys = <span class="value"><span class="number">500</span></span></span>
+<span class="setting">migration_timeout = <span class="value"><span class="string">"30s"</span></span></span>
+
+<span class="comment"># Set configs for redis sentinel.</span>
+<span class="setting">sentinel_client_timeout = <span class="value"><span class="string">"10s"</span></span></span>
+<span class="setting">sentinel_quorum = <span class="value"><span class="number">2</span></span></span>
+<span class="setting">sentinel_parallel_syncs = <span class="value"><span class="number">1</span></span></span>
+<span class="setting">sentinel_down_after = <span class="value"><span class="string">"30s"</span></span></span>
+<span class="setting">sentinel_failover_timeout = <span class="value"><span class="string">"5m"</span></span></span>
+<span class="setting">sentinel_notification_script = <span class="value"><span class="string">""</span></span></span>
+<span class="setting">sentinel_client_reconfig_script = <span class="value"><span class="string">""</span></span></span>
+</code></pre><p>启动dashboard：</p>
+<pre><code>[root<span class="variable">@node1</span> codis]# nohup ./bin/codis-dashboard --ncpu=<span class="number">1</span> --config=config/dashboard.toml --<span class="keyword">log</span>=dashboard.<span class="keyword">log</span> --<span class="keyword">log</span>-level=WARN &gt;&gt; /var/<span class="keyword">log</span>/codis_dashboard.<span class="keyword">log</span> &amp;
+</code></pre><hr>
+<font color="#FF6347">/codis/config/proxy.toml</font>
+
+
+<pre><code>##################################################
+#                                                #
+#                  Codis-Proxy                   #
+#                                                #
+##################################################
+
+# <span class="operator"><span class="keyword">Set</span> Codis Product <span class="keyword">Name</span>/Auth.
+product_name = <span class="string">"codis-warship"</span>
+product_auth = <span class="string">""</span>
+
+# <span class="keyword">Set</span> auth <span class="keyword">for</span> <span class="keyword">client</span> <span class="keyword">session</span>
+#   <span class="number">1.</span> product_auth <span class="keyword">is</span> used <span class="keyword">for</span> auth <span class="keyword">validation</span> among codis-dashboard,
+#      codis-proxy <span class="keyword">and</span> codis-<span class="keyword">server</span>.
+#   <span class="number">2.</span> session_auth <span class="keyword">is</span> different <span class="keyword">from</span> product_auth, it requires clients
+#      <span class="keyword">to</span> issue AUTH &lt;<span class="keyword">PASSWORD</span>&gt; <span class="keyword">before</span> processing <span class="keyword">any</span> other commands.
+session_auth = <span class="string">""</span>
+
+# <span class="keyword">Set</span> bind address <span class="keyword">for</span> <span class="keyword">admin</span>(rpc), tcp <span class="keyword">only</span>.
+admin_addr = <span class="string">"0.0.0.0:11080"</span>
+
+# <span class="keyword">Set</span> bind address <span class="keyword">for</span> proxy, proto_type can be <span class="string">"tcp"</span>, <span class="string">"tcp4"</span>, <span class="string">"tcp6"</span>, <span class="string">"unix"</span> <span class="keyword">or</span> <span class="string">"unixpacket"</span>.
+proto_type = <span class="string">"tcp4"</span>
+proxy_addr = <span class="string">"0.0.0.0:19000"</span>
+
+# <span class="keyword">Set</span> jodis address &amp; <span class="keyword">session</span> <span class="keyword">timeout</span>
+#   <span class="number">1.</span> jodis_name <span class="keyword">is</span> <span class="keyword">short</span> <span class="keyword">for</span> jodis_coordinator_name, <span class="keyword">only</span> <span class="keyword">accept</span> <span class="string">"zookeeper"</span> &amp; <span class="string">"etcd"</span>.
+#   <span class="number">2.</span> jodis_addr <span class="keyword">is</span> <span class="keyword">short</span> <span class="keyword">for</span> jodis_coordinator_addr
+#   <span class="number">3.</span> jodis_auth <span class="keyword">is</span> <span class="keyword">short</span> <span class="keyword">for</span> jodis_coordinator_auth, <span class="keyword">for</span> zookeeper/etcd, <span class="string">"user:password"</span> <span class="keyword">is</span> accepted.
+#   <span class="number">4.</span> proxy will be registered <span class="keyword">as</span> node:
+#        <span class="keyword">if</span> jodis_compatible = <span class="literal">true</span> (<span class="keyword">not</span> suggested):
+#          /zk/codis/db_{PRODUCT_NAME}/proxy-{HASHID} (compatible <span class="keyword">with</span> Codis2<span class="number">.0</span>)
+#        <span class="keyword">or</span> <span class="keyword">else</span>
+#          /jodis/{PRODUCT_NAME}/proxy-{HASHID}
+jodis_name = <span class="string">"zookeeper"</span>
+jodis_addr = <span class="string">"172.31.0.84:19021,172.31.0.17:19021,172.31.0.79:19021"</span>
+jodis_auth = <span class="string">""</span>
+jodis_timeout = <span class="string">"20s"</span>
+jodis_compatible = <span class="literal">true</span>
+
+# <span class="keyword">Set</span> datacenter <span class="keyword">of</span> proxy.
+proxy_datacenter = <span class="string">""</span>
+
+# <span class="keyword">Set</span> <span class="keyword">max</span> <span class="built_in">number</span> <span class="keyword">of</span> alive sessions.
+proxy_max_clients = <span class="number">1000</span>
+
+# <span class="keyword">Set</span> <span class="keyword">max</span> offheap <span class="keyword">memory</span> <span class="keyword">size</span>. (<span class="number">0</span> <span class="keyword">to</span> <span class="keyword">disable</span>)
+proxy_max_offheap_size = <span class="string">"1024mb"</span>
+
+# <span class="keyword">Set</span> <span class="keyword">heap</span> placeholder <span class="keyword">to</span> reduce GC frequency.
+proxy_heap_placeholder = <span class="string">"256mb"</span>
+
+# Proxy will ping backend redis (<span class="keyword">and</span> <span class="keyword">clear</span> <span class="string">'MASTERDOWN'</span> state) <span class="keyword">in</span> a predefined <span class="built_in">interval</span>. (<span class="number">0</span> <span class="keyword">to</span> <span class="keyword">disable</span>)
+backend_ping_period = <span class="string">"5s"</span>
+
+# <span class="keyword">Set</span> backend recv buffer <span class="keyword">size</span> &amp; <span class="keyword">timeout</span>.
+backend_recv_bufsize = <span class="string">"128kb"</span>
+backend_recv_timeout = <span class="string">"30s"</span>
+
+# <span class="keyword">Set</span> backend send buffer &amp; <span class="keyword">timeout</span>.
+backend_send_bufsize = <span class="string">"128kb"</span>
+backend_send_timeout = <span class="string">"30s"</span>
+
+# <span class="keyword">Set</span> backend pipeline buffer <span class="keyword">size</span>.
+backend_max_pipeline = <span class="number">20480</span>
+
+# <span class="keyword">Set</span> backend <span class="keyword">never</span> <span class="keyword">read</span> replica <span class="keyword">groups</span>, <span class="keyword">default</span> <span class="keyword">is</span> <span class="literal">false</span>
+backend_primary_only = <span class="literal">false</span>
+
+# <span class="keyword">Set</span> backend <span class="keyword">parallel</span> connections per <span class="keyword">server</span>
+backend_primary_parallel = <span class="number">1</span>
+backend_replica_parallel = <span class="number">1</span>
+
+# <span class="keyword">Set</span> backend tcp keepalive <span class="keyword">period</span>. (<span class="number">0</span> <span class="keyword">to</span> <span class="keyword">disable</span>)
+backend_keepalive_period = <span class="string">"75s"</span>
+
+# <span class="keyword">Set</span> <span class="built_in">number</span> <span class="keyword">of</span> <span class="keyword">databases</span> <span class="keyword">of</span> backend.
+backend_number_databases = <span class="number">16</span>
+
+# <span class="keyword">If</span> there <span class="keyword">is</span> <span class="keyword">no</span> request <span class="keyword">from</span> <span class="keyword">client</span> <span class="keyword">for</span> a <span class="keyword">long</span> <span class="keyword">time</span>, the <span class="keyword">connection</span> will be closed. (<span class="number">0</span> <span class="keyword">to</span> <span class="keyword">disable</span>)
+# <span class="keyword">Set</span> <span class="keyword">session</span> recv buffer <span class="keyword">size</span> &amp; <span class="keyword">timeout</span>.
+session_recv_bufsize = <span class="string">"128kb"</span>
+session_recv_timeout = <span class="string">"30m"</span>
+
+# <span class="keyword">Set</span> <span class="keyword">session</span> send buffer <span class="keyword">size</span> &amp; <span class="keyword">timeout</span>.
+session_send_bufsize = <span class="string">"64kb"</span>
+session_send_timeout = <span class="string">"30s"</span>
+
+# Make sure this <span class="keyword">is</span> higher <span class="keyword">than</span> the <span class="keyword">max</span> <span class="built_in">number</span> <span class="keyword">of</span> requests <span class="keyword">for</span> <span class="keyword">each</span> pipeline request, <span class="keyword">or</span> your <span class="keyword">client</span> may be blocked.
+# <span class="keyword">Set</span> <span class="keyword">session</span> pipeline buffer <span class="keyword">size</span>.
+session_max_pipeline = <span class="number">10000</span>
+
+# <span class="keyword">Set</span> <span class="keyword">session</span> tcp keepalive <span class="keyword">period</span>. (<span class="number">0</span> <span class="keyword">to</span> <span class="keyword">disable</span>)
+session_keepalive_period = <span class="string">"75s"</span>
+
+# <span class="keyword">Set</span> <span class="keyword">session</span> <span class="keyword">to</span> be sensitive <span class="keyword">to</span> failures. <span class="keyword">Default</span> <span class="keyword">is</span> <span class="literal">false</span>, instead <span class="keyword">of</span> closing socket, proxy will send an <span class="keyword">error</span> response <span class="keyword">to</span> <span class="keyword">client</span>.
+session_break_on_failure = <span class="literal">false</span>
+
+# <span class="keyword">Set</span> metrics <span class="keyword">server</span> (such <span class="keyword">as</span> <span class="keyword">http</span>://localhost:<span class="number">28000</span>), proxy will report <span class="keyword">json</span> formatted metrics <span class="keyword">to</span> specified <span class="keyword">server</span> <span class="keyword">in</span> a predefined <span class="keyword">period</span>.
+metrics_report_server = <span class="string">""</span>
+metrics_report_period = <span class="string">"1s"</span>
+
+# <span class="keyword">Set</span> influxdb <span class="keyword">server</span> (such <span class="keyword">as</span> <span class="keyword">http</span>://localhost:<span class="number">8086</span>), proxy will report metrics <span class="keyword">to</span> influxdb.
+metrics_report_influxdb_server = <span class="string">""</span>
+metrics_report_influxdb_period = <span class="string">"1s"</span>
+metrics_report_influxdb_username = <span class="string">""</span>
+metrics_report_influxdb_password = <span class="string">""</span>
+metrics_report_influxdb_database = <span class="string">""</span>
+
+# <span class="keyword">Set</span> statsd <span class="keyword">server</span> (such <span class="keyword">as</span> localhost:<span class="number">8125</span>), proxy will report metrics <span class="keyword">to</span> statsd.
+metrics_report_statsd_server = <span class="string">""</span>
+metrics_report_statsd_period = <span class="string">"1s"</span>
+metrics_report_statsd_prefix = <span class="string">""</span></span>
+</code></pre><p>启动代理</p>
+<pre><code>[root<span class="variable">@node1</span> codis]# nohup ./bin/codis-proxy --ncpu=<span class="number">1</span> --config=config/proxy.toml --<span class="keyword">log</span>=proxy.<span class="keyword">log</span> --<span class="keyword">log</span>-level=WARN &gt;&gt; /var/<span class="keyword">log</span>/codis_proxy.<span class="keyword">log</span> &amp;
+</code></pre><hr>
+<p><font color="#FF6347">/codis/config/redis-6380.conf</font>   redis的配置主要是改这几个</p>
+<pre><code>bind <span class="number">172.31</span><span class="number">.0</span><span class="number">.84</span>
+port <span class="number">6380</span>
+pidfile <span class="string">"/tmp/redis_6380.pid"</span>
+maxmemory <span class="number">12</span>G
+dir <span class="string">"/data/service/codis"</span>
+logfile <span class="string">"/tmp/redis_6380.log"</span>
+</code></pre><p>通过codis-server指定redis.conf文件启动redis服务，不能通过redis命令启动redis服务，通过redis启动的redis 服务加到codis集群无法正常使用：</p>
+<pre><code>[root<span class="constant">@redis1</span> codis]<span class="preprocessor"># ./bin/codis-server ../config/redis_6380.conf </span>
+</code></pre><h3 id="使用codis的网页服务器配置codis服务器">使用codis的网页服务器配置codis服务器</h3><p>启动codis-fe</p>
+<pre><code>nohup ./bin/codis-fe --ncpu=<span class="number">1</span> --<span class="built_in">log</span>=fe.<span class="built_in">log</span> --<span class="built_in">log</span>-level=WARN --zookeeper=<span class="number">172.31</span><span class="number">.0</span><span class="number">.84</span>:<span class="number">19021</span> --listen=<span class="number">172.31</span><span class="number">.0</span><span class="number">.84</span>:<span class="number">8060</span>
+</code></pre>
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/Redis/">Redis</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+  </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/C/">C++</a><small>10</small></li>
+  
+    <li><a href="/tags/DB/">DB</a><small>2</small></li>
+  
+    <li><a href="/tags/FTP/">FTP</a><small>1</small></li>
+  
+    <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>5</small></li>
+  
+    <li><a href="/tags/Redis/">Redis</a><small>1</small></li>
+  
+    <li><a href="/tags/单词/">单词</a><small>1</small></li>
+  
+    <li><a href="/tags/博客/">博客</a><small>13</small></li>
+  
+    <li><a href="/tags/技术/">技术</a><small>13</small></li>
+  
+    <li><a href="/tags/文章/">文章</a><small>10</small></li>
+  
+    <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/C/" style="font-size: 17.5px;">C++</a> <a href="/tags/DB/" style="font-size: 12.5px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/单词/" style="font-size: 10px;">单词</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 17.5px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+  </div>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+<li><a href="http://zipperary.com/" title="Zippera's Blog">Zippera</a></li>
+</ul>
+</div>
+
+  <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1235899094&verifier=a6902c2e&dpc=1"></iframe>
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 shafeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
