@@ -53,11 +53,57 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2018-05-08T04:00:00.000Z"><a href="/2018/05/08/codis_2/">2018-05-08</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/05/08/codis_2/">codis(中)</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="Codis_Dashboard_的配置和使用">Codis Dashboard 的配置和使用</h2><p>前一篇文章记录了codis的安装和启动，这一篇记录一下codis的使用。 codis的环境布置好之后需要用codis的网页来进行一系列配置，包括redis组的配置和代理地址的添加等等</p>
+<p>管理页面的主页，显示了当前使用的内存量，连接数，redis中存储的key的数量和每秒请求数</p>
+<hr>
+<p><img src="/2018/05/08/codis_2/main.png" alt="主页"></p>
+<hr>
+<p>在 Proxy 栏可看到我们已经启动的 Proxy， 但是 Group 栏为空，因为我们启动的 codis-server 并未加入到集群 添加 NEW GROUP，NEW GROUP 行输入 1，再点击 NEW GROUP 即可 添加 Codis Server</p>
+<hr>
+<p><img src="/2018/05/08/codis_2/proxy.png" alt="代理"></p>
+<hr>
+<p>添加实例（即添加后端的redis服务器）<br>Add Server 行输入我们刚刚启动的 codis-server 地址，添加到我们刚新建的 Group，然后再点击 Add Server 按钮即可</p>
+<hr>
+<p><img src="/2018/05/08/codis_2/group.png" alt="redis组"></p>
+<hr>
+<p>对slot初始化要分组，之后可以动态调整slot的归属</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2018-05-07T04:00:00.000Z"><a href="/2018/05/07/codis_1/">2018-05-07</a></time>
       
       
   
-    <h1 class="title"><a href="/2018/05/07/codis_1/">codis_1</a></h1>
+    <h1 class="title"><a href="/2018/05/07/codis_1/">codis(上)</a></h1>
   
 
     </header>
@@ -560,6 +606,61 @@ passwd haizhan
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
+<pre><code><span class="keyword">class</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+};
+<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">char</span>);
+    foo(<span class="keyword">char</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    foo(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
+</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/c++11 bind的使用/">2015-05-21</a></time>
       
       
@@ -661,61 +762,6 @@ passwd haizhan
     <span class="keyword">return</span> <span class="number">1</span>;
 }
 </code></pre><p>修改为类成员函数后就是这样了,这里遇到一个问题,<code>main</code>函数中调用<code>get_attr</code>时分成了两条代码,<br>因为写成这样编译报错<code>attr.get_attr(bind(&amp;MyClass::set_prop,&amp;myclass,_1,_2,std::bind(&amp;Info::new_info,&amp;info)));</code><br>我估计可能是类型不匹配之类的错误.总之分成两条代码就OK了. </p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
-<pre><code><span class="keyword">class</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-};
-<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">char</span>);
-    foo(<span class="keyword">char</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    foo(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
-</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
 
       
     </div>
@@ -871,46 +917,6 @@ main (<span class="built_in">int</span> argc, char* argv[])
 
 
 
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2015-02-12T07:12:53.000Z"><a href="/2015/02/12/libcurl/">2015-02-12</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/02/12/libcurl/">libcurl</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="Windows下libcurl静态库的编译和使用">Windows下libcurl静态库的编译和使用</h2><p>  最近在玩一个游戏,这游戏的服务器是http通信的,就想伪造一些数据看看.想起了curl,于是去下载,结果编译半天总是出错,又浪费了好多时间,现在成功了,记下来.</p>
-<hr>
-<p> 首先从这里下载最新的源代码<br>  <a href="http://curl.haxx.se/download.html" target="_blank" rel="external">http://curl.haxx.se/download.html</a><br> libcurl是源码,curl是一个http的工具,反正我用libcurl的源码就够了.</p>
-<p> 打开找到相应的VC版本工程用VS打开,我用的是VS2012,相应的版本是VC11.</p>
-<p> 一开始编译出错,因为这个版本里包含了ssh和ssl的第三方库,我也用不着所以在预编译宏里把关于ssl和ssh的都去掉.</p>
-<p> 然后继续编译lib静态库成功了,新建测试工程加入头文件和生成的附加库libcurld.lib,发现有无法识别的外部符号错误,网上找了半天解决方法.</p>
-<p> 最后的解决方法是. libcurl的预编译设定为<br><code>WIN32</code><br><code>_DEBUG</code><br><code>BUILDING_LIBCURL</code><br> 测试项目的预编译设置为<br><code>BUILDING_LIBCURL</code><br> 并且在测试项目头文件中添加以下内容<br><code>#define CURL_STATICLIB</code><br><code>#if defined(_DEBUG)</code><br><code>#pragma comment(lib, &quot;libcurld.lib&quot;)</code><br><code>#else</code><br><code>#pragma comment(lib, &quot;libcurl.lib&quot;)</code><br><code>#endif</code><br><code>#pragma comment(lib,&quot;winmm.lib&quot; )</code><br><code>#pragma comment(lib,&quot;ws2_32.lib&quot; )</code><br><code>#pragma comment(lib,&quot;wldap32.lib&quot; )</code></p>
-<p>再次编译,搞定.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
 
 <nav id="pagination">
   
@@ -942,13 +948,13 @@ main (<span class="built_in">int</span> argc, char* argv[])
   
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
-    <li><a href="/tags/Linux/">Linux</a><small>5</small></li>
+    <li><a href="/tags/Linux/">Linux</a><small>6</small></li>
   
-    <li><a href="/tags/Redis/">Redis</a><small>1</small></li>
+    <li><a href="/tags/Redis/">Redis</a><small>2</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>12</small></li>
+    <li><a href="/tags/博客/">博客</a><small>13</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>13</small></li>
+    <li><a href="/tags/技术/">技术</a><small>14</small></li>
   
     <li><a href="/tags/文章/">文章</a><small>10</small></li>
   
@@ -964,7 +970,7 @@ main (<span class="built_in">int</span> argc, char* argv[])
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 16px;">C++</a> <a href="/tags/DB/" style="font-size: 12px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 14px;">Linux</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/博客/" style="font-size: 18px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 16px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 16px;">C++</a> <a href="/tags/DB/" style="font-size: 12px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 14px;">Linux</a> <a href="/tags/Redis/" style="font-size: 12px;">Redis</a> <a href="/tags/博客/" style="font-size: 18px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 16px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 

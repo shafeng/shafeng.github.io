@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>FTP | Shafeng`s blog</title>
+  <title>codis(中) | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  
+  <meta property="og:title" content="codis(中)"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -46,25 +46,74 @@
 </nav>
 <div class="clearfix"></div></header>
   <div id="content" class="inner">
-    <div id="main-col" class="alignleft"><div id="wrapper">
-<h2 class="archive-title tag">FTP</h2>
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-05-08T04:00:00.000Z"><a href="/2018/05/08/codis_2/">2018-05-08</a></time>
+      
+      
+  
+    <h1 class="title">codis(中)</h1>
+  
 
+    </header>
+    <div class="entry">
+      
+        <h2 id="Codis_Dashboard_的配置和使用">Codis Dashboard 的配置和使用</h2><p>前一篇文章记录了codis的安装和启动，这一篇记录一下codis的使用。 codis的环境布置好之后需要用codis的网页来进行一系列配置，包括redis组的配置和代理地址的添加等等</p>
+<p>管理页面的主页，显示了当前使用的内存量，连接数，redis中存储的key的数量和每秒请求数</p>
+<hr>
+<p><img src="/2018/05/08/codis_2/main.png" alt="主页"></p>
+<hr>
+<p>在 Proxy 栏可看到我们已经启动的 Proxy， 但是 Group 栏为空，因为我们启动的 codis-server 并未加入到集群 添加 NEW GROUP，NEW GROUP 行输入 1，再点击 NEW GROUP 即可 添加 Codis Server</p>
+<hr>
+<p><img src="/2018/05/08/codis_2/proxy.png" alt="代理"></p>
+<hr>
+<p>添加实例（即添加后端的redis服务器）<br>Add Server 行输入我们刚刚启动的 codis-server 地址，添加到我们刚新建的 Group，然后再点击 Add Server 按钮即可</p>
+<hr>
+<p><img src="/2018/05/08/codis_2/group.png" alt="redis组"></p>
+<hr>
+<p>对slot初始化要分组，之后可以动态调整slot的归属</p>
 
-  <div class="archive">
-    
-      <article class="post">
-        <div class="post-content">
-          <header>
-            <div class="icon"></div>
-            <time datetime="2016-05-08T09:07:00.000Z"><a href="/2016/05/08/vsftpd/">2016-05-08</a></time>
-            
-              <h1 class="title"><a href="/2016/05/08/vsftpd/">Linux上vsftpd的搭建和使用</a></h1>
-            
-          </header>
-        </div>
-      </article>
-    
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/Redis/">Redis</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
 </div></div>
     <aside id="sidebar" class="alignright">
   <div class="search">
