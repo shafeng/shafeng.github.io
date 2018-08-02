@@ -64,7 +64,7 @@
     <div class="entry">
       
         <h2 id="Redis集群，Codis的安装和使用">Redis集群，Codis的安装和使用</h2><p>项目上经过了多次合服和长达两年多的运营，单服玩家已经超过了600W,项目最原始的架构是将所有玩家的摘要数据在服务器启动时从数据库中读取，如果只有几万人或者及几十万人，启动速度基本上就是一两分钟的样子，没有什么压力，但是600W玩家的所有摘要数据全部加载需要的时间可能超过几十分钟，为此项目使用了Redis，将玩家摘要数据和排行榜数据全部都转移到了Redis中，我使用了Codis，基于go开发的redis集群，可以无限扩展Redis的内存大小。记录一下部署和使用Codis的全过程。</p>
-<p><img src="../img/codis.png" alt="Codis"></p>
+<p><img src="/2018/05/07/codis_1/codis.png" alt="Codis"></p>
 <h3 id="安装环境">安装环境</h3><p>codis-proxy相当于redis，即连接codis-proxy和连接redis是没有任何区别的，codis-proxy无状态，不负责记录是否在哪保存，数据在zookeeper记录，即codis proxy向zookeeper查询key的记录位置，proxy 将请求转发到一个组进行处理，一个组里面有一个master和一个或者多个slave组成，默认有1024个槽位，其把不同的槽位的内容放在不通的group。codis是基于go语言编写的，因此要安装go语言环境。每台服务器安装java环境和zookeeper，zookeeper集群最少需要3台服务器。</p>
 <h4 id="安装_zookeeper">安装 zookeeper</h4><pre><code>wget http:<span class="comment">//219.238.7.67/files/205200000AF1D7B9/mirrors.hust.edu.cn/apache/zookeeper/zookeeper-3.4.11/zookeeper-3.4.11.tar.gz</span>
 tar -xzf zookeeper-<span class="number">3.4</span>.<span class="number">11</span><span class="class">.tar</span><span class="class">.gz</span> -C /data/service
