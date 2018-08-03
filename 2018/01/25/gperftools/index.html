@@ -1,0 +1,280 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>记一次使用gperftools分析线上程序 | Shafeng`s blog</title>
+  <meta name="author" content="shafeng">
+  
+  <meta name="description" content="c++">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="记一次使用gperftools分析线上程序"/>
+  <meta property="og:site_name" content="Shafeng`s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="Shafeng`s blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Shafeng`s blog</a></h1>
+  <h2><a href="/">road</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">目录</a></li>
+    
+      <li><a href="/about">关于</a></li>
+    
+	<li> <a href="/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-01-25T04:00:00.000Z"><a href="/2018/01/25/gperftools/">2018-01-25</a></time>
+      
+      
+  
+    <h1 class="title">记一次使用gperftools分析线上程序</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="gperftools的实战使用经验">gperftools的实战使用经验</h1><p>项目自上线之后一直有玩家反应战斗的时候会有不太流畅的情况出现，尤其是人数多，生成战斗对象多的情况下，经过对程序的监控并没有发现什么异常，主机资源的使用上也没发现什么问题，cpu和内存的使用率都不高，网络进出流量也并没有达到峰值，cpu使用率和网络的抖动从监控上看也看不出什么问题，这个问题困扰了我很久，一直苦于无法解决，不过通过我对cpu使用率的观察，感觉cpu虽然没有长时间的抖动，但是偶尔会有一个比较大的抖动出现，时间很短，但是抖动的范围还是比较大的，最后我找到了google的性能分析工具gperftools，因为我们的程序可以分布负载，可以用多个进程将一部分大的功能负载，这些进程本身是没有什么区别的，可以随意动态增加减少，所以我拿出了一个线上程序做了这次实验，把gperftools的相关库链接到了我的程序上并添加相关代码编译后放到线上环境中去运行，运行24小时候后停止程序并分析输出报告，然后解决报告中可见的问题，解决之后再次将新的程序放到线上运行24小时，如此循环一直到输出报告中看不到明显异常为止。   在这次实验中，确实发现了几个消耗cpu特别严重的函数调用，这些函数使用频繁，而且又非常耗费cpu，如果实例对象特别多的时候确实有可能造成cpu的抖动从而影响玩家正常体验。  把这些问题都完善之后确实收到了效果，反应战斗不流畅的玩家数量大幅减少，可以说这次优化还是比较成功的，记录一下gperftools的使用方法,gperftools可以分析cpu和内存的性能，下面分别写了例子和用法。</p>
+<p>gperftools是google出品的一个性能分析工具，相关介绍可见:<br><a href="https://github.com/gperftools/gperftools/wiki" target="_blank" rel="external">https://github.com/gperftools/gperftools/wiki</a><br>gperftools性能分析通过抽样方法完成，默认是1秒100个样本，即一个样本是10毫秒，因此程序运行时间要长一些。</p>
+<h2 id="编译安装gperftools">编译安装gperftools</h2><p>从<a href="https://github.com/gperftools/gperftools/releases下载最新版本的gperftools源码包" target="_blank" rel="external">https://github.com/gperftools/gperftools/releases下载最新版本的gperftools源码包</a><br>解压到/usr/local/src目录，编译安装</p>
+<h2 id="cpu性能分析">cpu性能分析</h2><pre><code><span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;google/profiler.h&gt;</span></span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span>
+<span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;
+<span class="function"><span class="keyword">void</span> <span class="title">func1</span><span class="params">()</span> 
+</span>{
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; ++i) 
+    {
+        ++i;
+        <span class="keyword">char</span> *p = (<span class="keyword">char</span>*)<span class="built_in">malloc</span>(<span class="number">1024</span>);
+        <span class="built_in">free</span>(p);
+    }  
+}
+<span class="function"><span class="keyword">void</span> <span class="title">func2</span><span class="params">()</span> 
+</span>{
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">200000</span>; ++i) 
+    {
+        <span class="keyword">char</span> *p = (<span class="keyword">char</span>*)<span class="built_in">malloc</span>(<span class="number">1024</span>);
+        <span class="built_in">free</span>(p);
+    }  
+}
+<span class="function"><span class="keyword">void</span> <span class="title">func3</span><span class="params">()</span> 
+</span>{
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; ++i) 
+    {
+        func1();
+        func2();
+    }  
+}
+
+<span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span>
+</span>{
+    ProfilerStart(<span class="string">"test.prof"</span>);<span class="comment">//开启性能分析并指定所生成的profile文件名</span>
+    func3();
+    ProfilerStop();<span class="comment">//停止性能分析并输出结果(如果这行代码不运行，将无法输出任何数据，只有一个空文件)</span>
+    <span class="keyword">return</span> <span class="number">0</span>; 
+}
+
+编译上面的程序文件test.cpp，连接tcmalloc和profiler
+g++ -I/work/trunk/ThirdParty/include/  -L/work/trunk/haizhan/Linux64_6<span class="number">.3</span><span class="number">.0</span>_Debug/commonlib/ -Wl,-rpath,/work/trunk/haizhan/Linux64_6<span class="number">.3</span><span class="number">.0</span>_Debug/commonlib/   -ltcmalloc -lprofiler   test.cpp -o test
+运行程序，等待程序退出后输出分析
+./text
+将程序输出的分析结果解析成pdf，需要安装graphviz
+yum install graphviz
+/work/trunk/haizhan/Linux64_6<span class="number">.3</span><span class="number">.0</span>_Debug/share_bin/pprof -pdf  test test.prof  &gt; CpuProfiler.pdf
+</code></pre><p>可以看到cpu在各个函数中的消耗，上面的百分比是本函数的消耗，下面的百分比是本函数所在堆栈所有函数的消耗，可以很清楚的分析出严重消耗cpu的问题函数。</p>
+<p><img src="/2018/01/25/gperftools/0001.jpg" alt="CpuProfiler.pdf"></p>
+<p>我们线上项目的分析报告已经被我删掉了。。。很遗憾没法记录当时的程序运行情况和每天优化后重新运行的分析情况。</p>
+<hr>
+<h2 id="内存性能分析">内存性能分析</h2><pre><code><span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;gperftools/heap-profiler.h&gt;</span></span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span>
+<span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;
+<span class="function"><span class="keyword">void</span> <span class="title">func1</span><span class="params">()</span> 
+</span>{
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; ++i) 
+    {
+        ++i;
+        <span class="keyword">char</span> *p = (<span class="keyword">char</span>*)<span class="built_in">malloc</span>(<span class="number">1024</span>);
+        <span class="built_in">free</span>(p);
+    }  
+}
+<span class="function"><span class="keyword">void</span> <span class="title">func2</span><span class="params">()</span> 
+</span>{
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">200000</span>; ++i) 
+    {
+        <span class="keyword">char</span> *p = (<span class="keyword">char</span>*)<span class="built_in">malloc</span>(<span class="number">1024</span>);
+        <span class="built_in">free</span>(p);
+    }  
+}
+<span class="function"><span class="keyword">void</span> <span class="title">func3</span><span class="params">()</span> 
+</span>{
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; ++i) 
+    {
+        func1();
+        func2();
+    }  
+}
+
+<span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span>
+</span>{
+    HeapProfilerStart(<span class="string">"test.prof"</span>);<span class="comment">//开启内存分析并指定所生成的profile文件名</span>
+    func3();
+    HeapProfilerStop();<span class="comment">//停止内存分析并输出结果(如果这行代码不运行，将无法输出任何数据，只有一个空文件)</span>
+    <span class="keyword">return</span> <span class="number">0</span>; 
+}
+
+
+编译，运行并输出pdf(同CPU性能分析)，不同之处在于内存分析每产生<span class="number">1</span>G的内存使用就会生成一个文件，生成pdf的时候需要包含所有生成的文件
+/work/trunk/haizhan/Linux64_6<span class="number">.3</span><span class="number">.0</span>_Debug/share_bin/pprof -pdf  test test.prof.*.heap  &gt; out.pdf
+</code></pre><p><img src="/2018/01/25/gperftools/0002.jpg" alt="MemoryProfiler.pdf"></p>
+<p>官方给出的建议是虽然gperftools对程序性能的影响不是非常大，也尽量不要在线上环境使用gperftools，但是经过我的使用发现gperftools大概会降低程序30%左右的效率，如果你的程序本身占用cpu并不高，而有些问题又必须在线上真实环境下才可能表现的出来，完全可以放到线上尝试一下。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C/">C++</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+  </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/C/">C++</a><small>11</small></li>
+  
+    <li><a href="/tags/DB/">DB</a><small>2</small></li>
+  
+    <li><a href="/tags/FTP/">FTP</a><small>1</small></li>
+  
+    <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>8</small></li>
+  
+    <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
+  
+    <li><a href="/tags/博客/">博客</a><small>18</small></li>
+  
+    <li><a href="/tags/技术/">技术</a><small>17</small></li>
+  
+    <li><a href="/tags/文章/">文章</a><small>1</small></li>
+  
+    <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/C/" style="font-size: 16.67px;">C++</a> <a href="/tags/DB/" style="font-size: 11.67px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 13.33px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/文章/" style="font-size: 10px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+  </div>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+<li><a href="http://zipperary.com/" title="Zippera's Blog">Zippera</a></li>
+</ul>
+</div>
+
+  <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1235899094&verifier=a6902c2e&dpc=1"></iframe>
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 shafeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
