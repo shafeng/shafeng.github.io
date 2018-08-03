@@ -53,6 +53,69 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2018-05-09T04:00:00.000Z"><a href="/2018/05/09/codis_3/">2018-05-09</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/05/09/codis_3/">codis(下)</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="Codis_在程序中的使用">Codis 在程序中的使用</h2><p>前两篇文章记录了codis的安装和启动，以及服务器集群的架设，这一篇记录一下codis在工程中的使用情况。</p>
+<h3 id="python测试程序">python测试程序</h3><p>用python连接codis服务器的测试程序，测试了一些简单的命令和简单排行榜。连接的ip地址是codis组件中proxy的地址，proxy接受的命令并不是全部是redis命令，具体情况参考官方文档</p>
+<p>（<a href="https://github.com/CodisLabs/codis/blob/release3.2/doc/unsupported_cmds.md）" target="_blank" rel="external">https://github.com/CodisLabs/codis/blob/release3.2/doc/unsupported_cmds.md）</a></p>
+<hr>
+<pre><code>import redis   <span class="preprocessor"># 导入redis模块，通过python操作redis 也可以直接在redis主机的服务端操作缓存数据库</span>
+
+r = redis.Redis(host=<span class="string">'127.0.0.1'</span>, port=<span class="number">6379</span>, decode_responses=<span class="literal">True</span>)   <span class="preprocessor"># host是redis主机，需要redis服务端和客户端都启动 redis默认端口是6379</span>
+
+<span class="preprocessor">#r.set(<span class="string">'name2'</span>, <span class="string">'warship3'</span>)  # key是<span class="string">"foo"</span> value是<span class="string">"bar"</span> 将键值对存入redis缓存</span>
+<span class="preprocessor"># print(r[<span class="string">'name2'</span>])</span>
+<span class="preprocessor"># print(r.get(<span class="string">'name2'</span>))  # 取出键name对应的值</span>
+<span class="preprocessor"># print(type(r.get(<span class="string">'name2'</span>)))</span>
+
+<span class="preprocessor">#r.hmset(<span class="string">"myhash"</span>,{<span class="string">"field1"</span>:<span class="string">"Hello"</span>,<span class="string">"field2"</span>:<span class="string">"World"</span>}) </span>
+<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,5,111)</span>
+<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,2,112)</span>
+<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,30,113)</span>
+<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,10,114)</span>
+
+<span class="preprocessor">#ZRANGE myzset 0 -1 WITHSCORES</span>
+
+<span class="preprocessor"># print(type(r.zrange(<span class="string">"499-rank-100"</span>,0,3,withscores=True)))</span>
+<span class="preprocessor"># print(r.zrange(<span class="string">"499-rank-100"</span>,0,3,withscores=True))</span>
+<span class="preprocessor"># print(r.zrevrange(<span class="string">"499-rank-100"</span>,0,3,withscores=True))</span>
+<span class="preprocessor"># print(r.zrevrank(<span class="string">"499-rank-100"</span>,10))</span>
+
+print(r.zrevrange(<span class="string">"1014-rank-4"</span>,<span class="number">0</span>,<span class="number">100</span>,withscores=<span class="literal">True</span>))
+print(r.zrevrank(<span class="string">"1014-rank-4"</span>,<span class="number">10</span>))
+</code></pre><hr>
+<h3 id="项目中的实际使用">项目中的实际使用</h3><p>首先我们的项目在没有引入codis之前，所有的数据全部存储在mysql中，玩家摘要和排行榜这些请求量比较大的数据都是在程序初始化的时候全部加载到内存中的，引入codis后，需要把这些数据全部在codis中做一份拷贝（用python做这类工作非常效率，因为我们的mysql数据中每一张数据表都有一个modify_time字段，标识了该条数据的上一次修改时间，所以只要根据这个字段就可以在不停服的情况下做前期的数据拷贝，停服后只需要同步最后一点时间内修改的数据就好了），工程中使用这些数据的时候需要把mysql和codis中的数据同步更新，由于mysql的数据更可信，所以在mysql和redis的数据出现不匹配的情况下，选择mysql中的数据，而大量对摘要和排行榜数据的请求全部交给codis处理，这样不仅分离了项目主程序和摘要排行榜数据，也加快了读取这些数据的速度。</p>
+<p>上线后codis的表现比较好，没有出现过什么问题，如果各个group的内存使用不太平均，还可以使用codis网页工具提供的功能对slot进行动态转移，把内存量使用大的group中的slot分配到其它group中。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2018-05-08T04:00:00.000Z"><a href="/2018/05/08/codis_2/">2018-05-08</a></time>
       
       
@@ -335,6 +398,9 @@ logfile <span class="string">"/tmp/redis_6380.log"</span>
 <pre><code>[root<span class="constant">@redis1</span> codis]<span class="preprocessor"># ./bin/codis-server ../config/redis_6380.conf </span>
 </code></pre><h3 id="使用codis的网页服务器配置codis服务器">使用codis的网页服务器配置codis服务器</h3><p>启动codis-fe</p>
 <pre><code>nohup ./bin/codis-fe --ncpu=<span class="number">1</span> --<span class="built_in">log</span>=fe.<span class="built_in">log</span> --<span class="built_in">log</span>-level=WARN --zookeeper=<span class="number">172.31</span><span class="number">.0</span><span class="number">.84</span>:<span class="number">19021</span> --listen=<span class="number">172.31</span><span class="number">.0</span><span class="number">.84</span>:<span class="number">8060</span>
+</code></pre><hr>
+<p>以上配置是我在实际使用中的配置，官方的教程在这里：</p>
+<pre><code><span class="string">https:</span><span class="comment">//github.com/CodisLabs/codis/blob/release3.2/doc/tutorial_zh.md</span>
 </code></pre>
       
     </div>
@@ -778,145 +844,6 @@ passwd haizhan
 
 
 
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2015-04-09T09:15:53.000Z"><a href="/2015/04/09/orm-odb/">2015-04-09</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/04/09/orm-odb/">orm-odb(c++)</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="基于ORM机制的C++数据库操作开源库ODB">基于ORM机制的C++数据库操作开源库ODB</h2><p>  最近在项目里遇到一个问题,关于数据库读取大量数据的,这部分代码项目里的思路是,对数据表做索引,然后依据索引排序,取出最上面的max_size(5000)条数据,然后基于后面的数据继续排序,取出最上面max_size(5000)条,依此循环直到取出最后一条数据.  开始我觉得这样可能效率会比较低,因为每次操作都要进行一次排序,我觉得用limit 0,max_size .limit 0+max_size,max_size+max_size这样的方法要快一些,后来想了一下问题的关键应该是在每次取第一条数据的时候,比如先排序再去取的话,因为建立了索引,所以排序是很快的,而且第一条马上就找到了,但是用limit 0,max_size这样的方法的话,每次查找第一条数据都要顺序数到位置,所以先排序再取数据的方法是稍微好一点的. </p>
-<hr>
-<p>  不过正是因为这个问题,偶然发现了一个c++的数据库操作库,基于ORM机制,google了一下ORM,全称是对象关系映射（Object Relational Mapping),简单来说就是使用这个库可以让程序员避免直接操作sql语句,数据的存储和对象直接相关,多说无益,记下使用方法以便日后用得到.</p>
-<hr>
-<p> 我是在windows平台上编译和测试的.这里记下windows下的使用方法:<br> 首先从<a href="http://www.codesynthesis.com/products/odb/" target="_blank" rel="external">http://www.codesynthesis.com/products/odb/</a> 下载到源码,主要是the Common Runtime Library和the Database Runtime Library,前者是ODB的基本库,后者是基于不同数据库的扩展库,后者要基于前者.我用的是mysql,所以要下载mysql的扩展库.前者没有任何依赖可以直接编译,后者要基于前者和mysql的库,我编译的时候总是不成功,后来发现我机器上安装的mysql是64位的,编译ODB的时候把win32改成X64后编译通过,以后要注意下这个问题.使用编译好的库启动官方的例子程序”hello”,一切正常.<br> 简单的用法如下:</p>
-<p> 这是一个简单的person类.<br> // person.hxx</p>
-<pre><code><span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span>
-
-<span class="keyword">class</span> person
-{
-<span class="keyword">public</span>:
-  person (<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; first,
-          <span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; last,
-          <span class="keyword">unsigned</span> <span class="keyword">short</span> age);
-
-  <span class="keyword">const</span> <span class="built_in">std</span>::<span class="function"><span class="built_in">string</span>&amp; <span class="title">first</span> <span class="params">()</span> <span class="keyword">const</span></span>;
-  <span class="keyword">const</span> <span class="built_in">std</span>::<span class="function"><span class="built_in">string</span>&amp; <span class="title">last</span> <span class="params">()</span> <span class="keyword">const</span></span>;
-
-  <span class="function"><span class="keyword">unsigned</span> <span class="keyword">short</span> <span class="title">age</span> <span class="params">()</span> <span class="keyword">const</span></span>;
-  <span class="function"><span class="keyword">void</span> <span class="title">age</span> <span class="params">(<span class="keyword">unsigned</span> <span class="keyword">short</span>)</span></span>;
-
-<span class="keyword">private</span>:
-  <span class="built_in">std</span>::<span class="built_in">string</span> first_;
-  <span class="built_in">std</span>::<span class="built_in">string</span> last_;
-  <span class="keyword">unsigned</span> <span class="keyword">short</span> age_;
-};
-</code></pre><p> 使用ODB后修改如下:</p>
-<p> // person.hxx</p>
-<pre><code><span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span>
-
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;odb/core.hxx&gt;</span>     // (1)</span>
-
-<span class="preprocessor">#<span class="keyword">pragma</span> db object           <span class="comment">// (2)</span></span>
-<span class="keyword">class</span> person
-{
-  ...
-
-<span class="keyword">private</span>:
-  person () {}              <span class="comment">// (3)</span>
-
-  <span class="keyword">friend</span> <span class="keyword">class</span> odb::access; <span class="comment">// (4)</span>
-
-  <span class="preprocessor">#<span class="keyword">pragma</span> db id auto        <span class="comment">// (5)</span></span>
-  <span class="keyword">unsigned</span> <span class="keyword">long</span> id_;        <span class="comment">// (5)</span>
-
-  <span class="built_in">std</span>::<span class="built_in">string</span> first_;
-  <span class="built_in">std</span>::<span class="built_in">string</span> last_;
-  <span class="keyword">unsigned</span> <span class="keyword">short</span> age_;
-};
-</code></pre><p> 使用这个sql文件建立数据表<br> //This file was generated by ODB, object-relational mapping (ORM) compiler for C++.</p>
-<pre><code><span class="operator"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="keyword">IF</span> <span class="keyword">EXISTS</span> <span class="string">`person`</span>;</span>
-
-<span class="operator"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`person`</span> (
-  <span class="string">`id`</span> <span class="built_in">BIGINT</span> <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> PRIMARY <span class="keyword">KEY</span> AUTO_INCREMENT,
-  <span class="string">`first`</span> <span class="built_in">TEXT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,
-  <span class="string">`last`</span> <span class="built_in">TEXT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,
-  <span class="string">`age`</span> <span class="built_in">SMALLINT</span> <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>)
- <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span>;</span>
-</code></pre><p>测试例子如下,执行commit函数后三个person类对象的数据就写入了数据库中,真的非常方便简洁.<br> //driver.cxx</p>
-<pre><code><span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;memory&gt;</span>   // std::auto_ptr</span>
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span>
-
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;odb/database.hxx&gt;</span></span>
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;odb/transaction.hxx&gt;</span></span>
-
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;odb/mysql/database.hxx&gt;</span></span>
-
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">"person.hxx"</span></span>
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">"person-odb.hxx"</span></span>
-
-using namespace std<span class="comment">;</span>
-using namespace odb::core<span class="comment">;</span>
-
-<span class="built_in">int</span>
-main (<span class="built_in">int</span> argc, char* argv[])
-{
-  try
-  {
-    //auto_ptr&lt;database&gt; db (new odb::mysql::database (argc, argv))<span class="comment">;</span>
-    auto_ptr&lt;database&gt; db (new odb::mysql::database(<span class="string">"dll"</span>,<span class="string">"dll"</span>,<span class="string">"odb_test"</span>,<span class="string">"localhost"</span>,<span class="number">3306</span>))<span class="comment">;</span>
-    unsigned long john_id, jane_id, joe_id<span class="comment">;</span>
-
-    // Create a few persistent person objects.
-    //
-    {
-      person john (<span class="string">"John"</span>, <span class="string">"Doe"</span>, <span class="number">33</span>)<span class="comment">;</span>
-      person jane (<span class="string">"Jane"</span>, <span class="string">"Doe"</span>, <span class="number">32</span>)<span class="comment">;</span>
-      person joe (<span class="string">"Joe"</span>, <span class="string">"Dirt"</span>, <span class="number">30</span>)<span class="comment">;</span>
-
-      transaction t (db-&gt;begin ())<span class="comment">;</span>
-
-      // Make objects persistent <span class="literal">and</span> save their ids <span class="keyword">for</span> later use.
-      //
-      john_id = db-&gt;persist (john)<span class="comment">;</span>
-      jane_id = db-&gt;persist (jane)<span class="comment">;</span>
-      joe_id = db-&gt;persist (joe)<span class="comment">;</span>
-
-      t.commit ()<span class="comment">;</span>
-    }
-  }
-  catch (<span class="keyword">const</span> odb::exception&amp; e)
-  {
-    cerr &lt;&lt; e.what () &lt;&lt; endl<span class="comment">;</span>
-    <span class="keyword">return</span> <span class="number">1</span><span class="comment">;</span>
-  }
-}
-</code></pre><p>这是ODB官方自带的例子,我们在使用ODB的时候需要自己生成person类的C++文件,使用官方的ODB Compiler,下载后将ODB的bin目录添加到系统的环境变量中,通过person.hxx文件即可得到ODB需要的其他c++文件,类似protobuf的使用.<br>    odb -d mysql –generate-query –generate-schema person.hxx<br>这条命令即可生成person-odb.hxx, person-odb.ixx, person-odb.cxx这三个文件,这样配合编译好的库文件就可以操作数据库了.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
 
 <nav id="pagination">
   
@@ -948,13 +875,13 @@ main (<span class="built_in">int</span> argc, char* argv[])
   
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
-    <li><a href="/tags/Linux/">Linux</a><small>6</small></li>
+    <li><a href="/tags/Linux/">Linux</a><small>7</small></li>
   
-    <li><a href="/tags/Redis/">Redis</a><small>2</small></li>
+    <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>13</small></li>
+    <li><a href="/tags/博客/">博客</a><small>14</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>14</small></li>
+    <li><a href="/tags/技术/">技术</a><small>15</small></li>
   
     <li><a href="/tags/文章/">文章</a><small>10</small></li>
   
@@ -970,7 +897,7 @@ main (<span class="built_in">int</span> argc, char* argv[])
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 16px;">C++</a> <a href="/tags/DB/" style="font-size: 12px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 14px;">Linux</a> <a href="/tags/Redis/" style="font-size: 12px;">Redis</a> <a href="/tags/博客/" style="font-size: 18px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 16px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 16.67px;">C++</a> <a href="/tags/DB/" style="font-size: 11.67px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 13.33px;">Redis</a> <a href="/tags/博客/" style="font-size: 18.33px;">博客</a> <a href="/tags/技术/" style="font-size: 20px;">技术</a> <a href="/tags/文章/" style="font-size: 16.67px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 
