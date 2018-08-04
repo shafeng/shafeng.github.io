@@ -548,11 +548,55 @@ yum install graphviz
     <header>
       
         <div class="icon"></div>
-        <time datetime="2017-11-15T04:00:00.000Z"><a href="/2017/11/15/C++协程/">2017-11-15</a></time>
+        <time datetime="2017-11-16T04:00:00.000Z"><a href="/2017/11/16/C++协程_2/">2017-11-16</a></time>
       
       
   
-    <h1 class="title"><a href="/2017/11/15/C++协程/">C++中的协程(上)</a></h1>
+    <h1 class="title"><a href="/2017/11/16/C++协程_2/">C++中的协程(下)</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="ucontext协程的封装">ucontext协程的封装</h1><p>前面介绍了unix自带的ucontext相关函数，现在记录一下我们实际项目中的使用。</p>
+<p>我们的项目中，每个玩家在登陆时创建玩家对象<code>CHZUser</code>，同时通过<code>SVR_BASE::co_create</code>函数创建一个协程上下文对象（后面简称协程对象），协程对象的执行函数是该玩家的消息循环函数<code>CHZUser::message_loop</code>,</p>
+<h2 id="总结">总结</h2><p>以上就是ucontext的全部内容，非常简洁。我们项目中使用的就是ucontext，后面再记录一下项目中的实际使用情况。</p>
+<pre><code><span class="class"><span class="keyword">enum</span> <span class="title">CoroutineStatus_t</span></span>
+{
+    emCoroutine_closed    =<span class="number">0</span>,    <span class="regexp">//</span><span class="regexp">/&lt; 关闭的
+    emCoroutine_WaitRun,    /</span><span class="regexp">//</span>&lt; 等待执行
+    emCoroutine_Runing,        <span class="regexp">//</span><span class="regexp">/&lt; 正在执行
+    emCoroutine_Message,    /</span><span class="regexp">//</span>&lt; 等着消息
+    emCoroutine_IOComplete    /<span class="regexp">//</span>&lt; 等待<span class="constant">IO</span>完成
+};
+</code></pre><p>协程的五个状态</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-11-15T04:00:00.000Z"><a href="/2017/11/15/C++协程_1/">2017-11-15</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2017/11/15/C++协程_1/">C++中的协程(上)</a></h1>
   
 
     </header>
@@ -826,6 +870,38 @@ secure-file-priv=
     <header>
       
         <div class="icon"></div>
+        <time datetime="2016-11-25T04:00:00.000Z"><a href="/2016/11/25/行为树/">2016-11-25</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2016/11/25/行为树/">AI行为树</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="用行为树来控制AI行为">用行为树来控制AI行为</h1>
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2016-05-08T09:07:00.000Z"><a href="/2016/05/08/vsftpd/">2016-05-08</a></time>
       
       
@@ -932,40 +1008,17 @@ passwd haizhan
     <header>
       
         <div class="icon"></div>
-        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
+        <time datetime="2015-09-01T04:00:00.000Z"><a href="/2015/09/01/epoll/">2015-09-01</a></time>
       
       
   
-    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
+    <h1 class="title"><a href="/2015/09/01/epoll/">epoll的使用</a></h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
-<pre><code><span class="keyword">class</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-};
-<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">char</span>);
-    foo(<span class="keyword">char</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    foo(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
-</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
-
+        <h1 id="epoll">epoll</h1>
       
     </div>
     <footer>
@@ -1088,6 +1141,61 @@ passwd haizhan
     <span class="keyword">return</span> <span class="number">1</span>;
 }
 </code></pre><p>修改为类成员函数后就是这样了,这里遇到一个问题,<code>main</code>函数中调用<code>get_attr</code>时分成了两条代码,<br>因为写成这样编译报错<code>attr.get_attr(bind(&amp;MyClass::set_prop,&amp;myclass,_1,_2,std::bind(&amp;Info::new_info,&amp;info)));</code><br>我估计可能是类型不匹配之类的错误.总之分成两条代码就OK了. </p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
+<pre><code><span class="keyword">class</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+};
+<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">char</span>);
+    foo(<span class="keyword">char</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    foo(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
+</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
 
       
     </div>
@@ -2714,7 +2822,7 @@ GLint main(GLint argc,char** argv)
   <h3 class="title">标签</h3>
   <ul class="entry">
   
-    <li><a href="/tags/C/">C++</a><small>12</small></li>
+    <li><a href="/tags/C/">C++</a><small>15</small></li>
   
     <li><a href="/tags/DB/">DB</a><small>2</small></li>
   
@@ -2722,15 +2830,13 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
-    <li><a href="/tags/Linux/">Linux</a><small>9</small></li>
+    <li><a href="/tags/Linux/">Linux</a><small>11</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>19</small></li>
+    <li><a href="/tags/博客/">博客</a><small>22</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>18</small></li>
-  
-    <li><a href="/tags/文章/">文章</a><small>1</small></li>
+    <li><a href="/tags/技术/">技术</a><small>21</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   
@@ -2744,7 +2850,7 @@ GLint main(GLint argc,char** argv)
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 16.67px;">C++</a> <a href="/tags/DB/" style="font-size: 11.67px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 13.33px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/文章/" style="font-size: 10px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 16.67px;">C++</a> <a href="/tags/DB/" style="font-size: 11.67px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 13.33px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 

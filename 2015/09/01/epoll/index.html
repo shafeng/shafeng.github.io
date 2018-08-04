@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>xcode在os x下编译使用protobuf | Shafeng`s blog</title>
+  <title>epoll的使用 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="xcode在os x下编译使用protobuf"/>
+  <meta property="og:title" content="epoll的使用"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,40 +52,17 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2014-11-19T06:34:39.000Z"><a href="/2014/11/19/protobuf/">2014-11-19</a></time>
+        <time datetime="2015-09-01T04:00:00.000Z"><a href="/2015/09/01/epoll/">2015-09-01</a></time>
       
       
   
-    <h1 class="title">xcode在os x下编译使用protobuf</h1>
+    <h1 class="title">epoll的使用</h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="os_x系统下xcode中使用protobuf">os x系统下xcode中使用protobuf</h2><p>最近在用cocos2dx做小游戏,希望用到网络部分,所以希望protobuf能在mac平台上工作,baidu和goole了一下后发现大部分都是重复的一两篇技术文章,转来转去,而且按照这两篇文章搞了一下都没有成功,后来发现了两篇实用的文章后才解决了问题,记录一下:</p>
-<p>主要参考两篇在网上流传不广的文章.<br><code>http://blog.csdn.net/deep_coder/article/details/38055275</code><br><code>http://blog.csdn.net/rct1985/article/details/9340641</code></p>
-<p>在 <code>https://code.google.com/p/protobuf/downloads/list</code> 这里下载最新的SourceCode工程, 我用的是2.5.0版本，下载完解压下指定目录下。</p>
-<p>cd yourDir  </p>
-<p>./configure<br>make<br>make check<br>sudo make install  </p>
-<p>安装成功后在需要用到protobuf的xcode工程里:<br>a. 把解压完的目录下 protobuf-2.5.0/src/google整个目录拷贝到cocos2d-x工程下的libs目录下。<br>b. 把解压完的目录下 config.h 拷贝到 libs/google 目录下，主要是放到一些宏定义， 没办法，代码被引用了。<br>c. 删除编译多语言相关文件，google/protobuf/compiler 目录是用来编译多语言的，删除<br>d. 删除单元测试文件 所有 <em>*</em>unittest.cc 文件是测试用例（根据文件名猜的），删除, 还有两个tesst打着的文件夹</p>
-<p>然后编译,会出现这个错误”#error Host architecture was not detected as supported by protobuf”</p>
-<p>解决这个问题的方法是:</p>
-<pre><code>In platform_macros<span class="class">.h</span>, Replace
-
-<span class="id">#else</span>
-<span class="id">#error</span> Host architecture was not detected as supported by protobuf
-<span class="id">#endif</span>
-
-
-By:
-<span class="id">#elif</span> <span class="function"><span class="title">defined</span><span class="params">(__aarch64__)</span></span>
-<span class="hexcolor">#def</span>ine GOOGLE_PROTOBUF_ARCH_ARM <span class="number">1</span>
-<span class="hexcolor">#def</span>ine GOOGLE_PROTOBUF_ARCH_64_BIT <span class="number">1</span>
-<span class="id">#else</span>
-<span class="id">#error</span> Host architecture was not detected as supported by protobuf
-#endif
-</code></pre><p>最后再编译就OK了!</p>
-
+        <h1 id="epoll">epoll</h1>
       
     </div>
     <footer>
@@ -94,7 +71,7 @@ By:
         
   
   <div class="tags">
-    <a href="/tags/C/">C++</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+    <a href="/tags/C/">C++</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
