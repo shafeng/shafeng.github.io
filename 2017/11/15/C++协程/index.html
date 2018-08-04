@@ -1,0 +1,290 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>C++中的协程(上) | Shafeng`s blog</title>
+  <meta name="author" content="shafeng">
+  
+  <meta name="description" content="c++">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="C++中的协程(上)"/>
+  <meta property="og:site_name" content="Shafeng`s blog"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="Shafeng`s blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Shafeng`s blog</a></h1>
+  <h2><a href="/">road</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">目录</a></li>
+    
+      <li><a href="/about">关于</a></li>
+    
+	<li> <a href="/atom.xml">RSS</a> </li>
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-11-15T04:00:00.000Z"><a href="/2017/11/15/C++协程/">2017-11-15</a></time>
+      
+      
+  
+    <h1 class="title">C++中的协程(上)</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="c++中协程的使用">c++中协程的使用</h1><p>我们的项目在逻辑中的异步操作并不太多，而且使用异步本身是一件很麻烦的事情，mysql也没有封装异步的方法，但是后期一些项目上的功能需要使用异步sql查询数据库，为了适应项目的发展和需求，引入了协程。</p>
+<p>从原理上看，协程保存了程序执行的当前位置，后续可以切换回来，即便是在一个完整函数的中间，也可以切走再切回来，像是一个用户态的线程，但是和线程不同的是，协程之间的切换需要我们自己实现。协程的好处是可以用符合思维习惯的同步写法，写出具有异步功能的高效代码，而不用像传统异步开发那样，设置各种回调函数把代码割离，弄的支离破碎很难理解。不过协程的切换虽然不会切到内核态，完全由用户来控制切换，但是协程的切换造成的开销，还是会比异步回调的方法开销大一些，但是总体来说，同步的写法实现异步这种好处还是盖过了切换带来的效率损耗。</p>
+<p>因为c++并没有标准的协程库，所以各种实现协程的方法很多，当前比较知名的是仿go语言实现的c++库libgo，腾讯的libco，boost的coroutine，context组件，unix系统自带的ucontext等等。  这些库我只看过libco和ucontext，腾讯的libco封装的太高级，其实用到自己项目中是不太灵活的，但是libco用汇编重写了切换协程的代码，在这方面的效率是比较高的，我们项目中用了unix系统的ucontext函数，实现了基本的协程功能，在实际使用中效率不太高，但是也足够用。 记录一下ucontext的原理和使用。</p>
+<h2 id="ucontext">ucontext</h2><p>先看一个简单的例子，来自维基百科：</p>
+<pre><code><span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;ucontext.h&gt;</span></span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span>
+
+<span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> *argv[])</span>
+</span>{
+    <span class="keyword">ucontext_t</span> context;
+    getcontext(&amp;context);
+    <span class="built_in">puts</span>(<span class="string">"Hello world"</span>);
+    sleep(<span class="number">1</span>);
+    setcontext(&amp;context);
+    <span class="keyword">return</span> <span class="number">0</span>;
+}
+</code></pre><p>这个程序的运行结果是这样的：</p>
+<pre><code>[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>vim test.cpp
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>g++ test.cpp -o test
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>./test 
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+<span class="constant">Hello</span> world
+^<span class="constant">C</span>
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>
+</code></pre><p><code>getcontext</code>得到了当前的上下文，然后输出<code>Hello world</code>，然后调用<code>setcontext</code>，又跳到了调用<code>getcontext</code>的位置，接着输出<code>Hello world</code>，一直循环下去。。。。</p>
+<hr>
+<p>ucontext很简洁，头文件 <code>&lt;ucontext.h&gt;</code> ，两个结构体<code>mcontext_t</code>和<code>ucontext_t</code>，<br>四个函数<code>getcontext()</code>,<code>setcontext()</code>,<code>makecontext()</code>,<code>swapcontext()</code>，这些内容就可以实现协程。</p>
+<p><code>mcontext_t</code>应该是系统需要传递的参数，是用户无关的，用户只需要关心<code>ucontext_t</code>结构和<br><code>getcontext()</code>,<code>setcontext()</code>,<code>makecontext()</code>,<code>swapcontext()</code>，下面详细介绍一个结构体和四个函数：</p>
+<pre><code><span class="keyword">typedef</span> <span class="keyword">struct</span> ucontext {
+          <span class="keyword">struct</span> ucontext *uc_link;
+          <span class="keyword">sigset_t</span>         uc_sigmask;
+          <span class="keyword">stack_t</span>          uc_stack;
+          <span class="keyword">mcontext_t</span>       uc_mcontext;
+          ...
+      } <span class="keyword">ucontext_t</span>;
+</code></pre><p><code>ucontext_t</code>中<code>uc_link</code>指向后继上下文，当前上下文如果执行结束会跳转到<code>uc_link</code>指向的上下文中运行，如果<code>uc_link</code>为<code>NULL</code>那么当前线程直接退出。<br><code>uc_stack</code> 设置当前上下文的堆栈大小和位置。<br>其他参数暂时没用到，具体用到之后再补充</p>
+<pre><code><span class="function"><span class="keyword">int</span> <span class="title">getcontext</span><span class="params">(ucontext_t *ucp)</span></span>;
+</code></pre><p>初始化ucp结构体，将当前的上下文保存到ucp中</p>
+<pre><code><span class="function"><span class="keyword">int</span> <span class="title">setcontext</span><span class="params">(<span class="keyword">const</span> ucontext_t *ucp)</span></span>;
+</code></pre><p>设置当前的上下文为<code>ucp</code>，<code>setcontext</code>的上下文ucp应该通过<code>getcontext</code>或者<code>makecontext</code>取得，如果调用成功则不返回。如果上下文是通过调用<code>getcontext()</code>取得,程序会继续执行这个调用。如果上下文是通过调用<code>makecontext</code>取得,程序会调用<code>makecontext</code>函数的第二个参数指向的函数，如果<code>func</code>函数返回,则恢复<code>makecontext</code>第一个参数指向的上下文第一个参数指向的上下文<code>context_t</code>中指向的uc_link.如果<code>uc_link</code>为<code>NULL</code>,则线程退出。</p>
+<pre><code><span class="function"><span class="keyword">void</span> <span class="title">makecontext</span>(<span class="params">ucontext_t *ucp, <span class="keyword">void</span> (*func</span>)(<span class="params"></span>), <span class="keyword">int</span> argc, ...)</span>;
+</code></pre><p><code>makecontext</code>修改通过<code>getcontext</code>取得的上下文<code>ucp</code>(这意味着调用<code>makecontext</code>前必须先调用<code>getcontext</code>)。然后给该上下文指定一个栈空间<code>ucp-&gt;stack</code>，设置后继的上下文<code>ucp-&gt;uc_link</code>.</p>
+<p>当上下文通过<code>setcontext</code>或者<code>swapcontext</code>激活后，执行<code>func</code>函数，<code>argc</code>为<code>func</code>的参数个数，后面是<code>func</code>的参数序列。当<code>func</code>执行返回后，继承的上下文被激活，如果继承上下文为<code>NULL</code>时，线程退出。</p>
+<pre><code>int swapcontext<span class="list">(<span class="keyword">ucontext_t</span> <span class="variable">*oucp, ucontext_t *</span>ucp)</span><span class="comment">;</span>
+</code></pre><p>保存当前上下文到oucp结构体中，然后激活ucp上下文。</p>
+<p>如果执行成功，<code>getcontext</code>返回0，<code>setcontext</code>和<code>swapcontext</code>不返回；<br>如果执行失败，<code>getcontext</code>,<code>setcontext</code>,<code>swapcontext</code>返回-1，并设置相应的errno.</p>
+<p>简单说来， <code>getcontext</code>获取当前上下文，<code>setcontext</code>设置当前上下文，<br><code>swapcontext</code>保存当前上下文并切换上下文，<code>makecontext</code>创建一个新的上下文。</p>
+<pre><code><span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;ucontext.h&gt;</span></span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span>
+
+<span class="function"><span class="keyword">void</span> <span class="title">func1</span><span class="params">(<span class="keyword">void</span> * arg)</span>
+</span>{
+    <span class="built_in">puts</span>(<span class="string">"func1"</span>);
+}
+<span class="function"><span class="keyword">void</span> <span class="title">context_test</span><span class="params">()</span>
+</span>{
+    <span class="keyword">char</span> <span class="built_in">stack</span>[<span class="number">1024</span>*<span class="number">128</span>];
+    <span class="keyword">ucontext_t</span> child,main;
+
+    getcontext(&amp;child); <span class="comment">//获取当前上下文</span>
+    child.uc_stack.ss_sp = <span class="built_in">stack</span>;<span class="comment">//指定栈空间</span>
+    child.uc_stack.ss_size = <span class="keyword">sizeof</span>(<span class="built_in">stack</span>);<span class="comment">//指定栈空间大小</span>
+    child.uc_stack.ss_flags = <span class="number">0</span>;
+    child.uc_link = &amp;main;<span class="comment">//设置后继上下文</span>
+
+    makecontext(&amp;child,(<span class="keyword">void</span> (*)(<span class="keyword">void</span>))func1,<span class="number">0</span>);<span class="comment">//修改上下文指向func1函数</span>
+
+    swapcontext(&amp;main,&amp;child);<span class="comment">//保存当前上下文到main，切换到child上下文</span>
+    <span class="built_in">puts</span>(<span class="string">"main"</span>);<span class="comment">//如果设置了后继上下文，func1函数指向完后会返回此处</span>
+}
+
+<span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span>
+</span>{
+    context_test();
+
+    <span class="keyword">return</span> <span class="number">0</span>;
+}
+</code></pre><p>这个例子中，<code>getcontext</code>首先获得了当前的上下文，<code>child</code>参数相当于一个输出，通过<code>getcontext</code>函数把当前上下文的信息写入到<code>child</code>中。然后修改了<code>child</code>上下文的栈空间和大小，以及后继上下文，然后调用<code>makecontext</code>，这时<code>child</code>相当于输入，将<code>child</code>上下文的执行位置指向<code>func1</code>，最后调用<code>swapcontext</code>，<code>main</code>和<code>child</code>都是输入，将当前的上下文保存到<code>main</code>中，然后切换到<code>child</code>上下文(此时的<code>child</code>上下文位置是<code>func1</code>函数的起点)。 这样这个程序执行后的输出就是：</p>
+<pre><code>[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>vim test.cpp
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>g++ test.cpp -o test
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>./test 
+func1
+main
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>
+</code></pre><p>可以看到当程序执行到<code>swapcontext</code>后，程序通过<code>child</code>上下文跳转到了<code>func1</code>，先执行了<code>puts(&quot;func1&quot;)</code>; 函数执行结束后跳转到<code>child</code>的后继上下文<code>main</code>，也就是调用<code>swapcontext</code>时保存起来的上下文，这样程序又回到了<code>swapcontext</code>执行结束的位置（因为<code>swapcontext</code>执行成功不返回，<code>swapcontext</code>已经执行成功，所以跳转回来之后程序的位置在<code>swapcontext</code>的下一句）并执行<code>puts(&quot;main&quot;)</code>;</p>
+<p>上面的程序在执行完<code>child</code>上下文后能够跳到<code>main</code>上下文是因为设置了<code>child</code>的后继上下文<code>child.uc_link = &amp;main</code>，如果我们把这一句改为<code>child.uc_link = NULL</code>，编译执行后得到如下结果</p>
+<pre><code>[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>vim test.cpp
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>g++ test.cpp -o test
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>./test 
+func1
+[shafeng<span class="variable">@localhost</span> <span class="constant">Desktop</span>]<span class="variable">$ </span>
+</code></pre><p>可以看到<code>child</code>上下文在执行结束之后就直接退出了线程。 所以上下文的后继上下文很重要，否则我们的程序可能直接退出。</p>
+<h2 id="总结">总结</h2><p>以上就是ucontext的全部内容，非常简洁。我们项目中使用的就是ucontext，后面再记录一下项目中的实际使用情况。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C/">C++</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+  </div>
+
+		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdPic":"","bdStyle":"0","bdSize":"16"},"share":{},"image":{"viewList":["qzone","tsina","tqq","renren","weixin"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["qzone","tsina","tqq","renren","weixin"]}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+	<div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"shafeng"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = 'http://static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		|| document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/C/">C++</a><small>12</small></li>
+  
+    <li><a href="/tags/DB/">DB</a><small>2</small></li>
+  
+    <li><a href="/tags/FTP/">FTP</a><small>1</small></li>
+  
+    <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>9</small></li>
+  
+    <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
+  
+    <li><a href="/tags/博客/">博客</a><small>19</small></li>
+  
+    <li><a href="/tags/技术/">技术</a><small>18</small></li>
+  
+    <li><a href="/tags/文章/">文章</a><small>1</small></li>
+  
+    <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/C/" style="font-size: 16.67px;">C++</a> <a href="/tags/DB/" style="font-size: 11.67px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/Redis/" style="font-size: 13.33px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/文章/" style="font-size: 10px;">文章</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+  </div>
+</div>
+
+
+  <div class="widget tag">
+<h3 class="title">友情链接</h3>
+<ul class="entry">
+<li><a href="http://www.google.com/" title="google">google</a></li>
+</ul>
+</div>
+
+  <iframe width="100%" height="550" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=550&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1235899094&verifier=a6902c2e&dpc=1"></iframe>
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 shafeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
