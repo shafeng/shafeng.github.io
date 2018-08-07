@@ -63,6 +63,34 @@
     <div class="entry">
       
         <h1 id="ssh登陆管理">ssh登陆管理</h1><p>我们的项目本身有大量的云服务器，装机的时候用了统一的装机脚本，云服务器的密码都是一样的，因为早期只有几个核心程序员有登陆云服务器的权限，所以并没有对这方面做管理。直到有一个核心程序员离职，不得不管理一下手头的服务器</p>
+<p>首先所有对服务器有操作权限的人员提供自己的ssh-key秘钥对，一般使用rsa秘钥，然后把这些秘钥对中的公钥(.pub)添加到服务器的<code>/home/service/.ssh/authorized_keys</code>文件中，新添加的公钥直接在该文件后面添加即可。</p>
+<p>为了提升服务器的整体安全性，我们需要对ssh进行配置：</p>
+<pre><code><span class="title">vim</span> /etc/ssh/sshd_config          
+
+修改配置文件并主要修改以下几个参数
+
+PermitRootLogin <span class="built_in">no</span>                       <span class="comment">#禁止root登录</span>
+PubkeyAuthentication <span class="built_in">yes</span>                 <span class="comment">#启用公告密钥配对认证方式</span>
+RSAAuthentication <span class="built_in">yes</span>                    <span class="comment">#允许RSA密钥</span>
+PasswordAuthentication <span class="built_in">no</span>                <span class="comment">#禁止密码验证登录，如果启用的话，OpenSSH的 RSA认证登录就没有意义了。</span>
+
+
+修改后重启
+
+service sshd restart
+</code></pre><p>如果服务器上没有<code>.ssh</code>文件夹,那么我们需要自己来创建：</p>
+<pre><code>mkdir <span class="class">.ssh</span>
+chmod <span class="number">700</span> <span class="class">.ssh</span>
+cd <span class="class">.ssh</span>
+touch authorized_keys
+chmod <span class="number">600</span> authorized_keys
+#将公钥内容写入文件
+cat /data/service/Identity<span class="class">.pub</span> &gt;&gt; authorized_keys
+</code></pre><p>这样如果有人离职，只需要把服务器上对应人员的公钥删除就可以了。</p>
+<h1 id="一些其他关于ssh的记录">一些其他关于ssh的记录</h1><pre><code><span class="preprocessor"># <span class="number">123.206</span><span class="number">.76</span><span class="number">.219</span>:<span class="number">4306</span> 是远端的ip和port，<span class="number">2009</span>是远端的SSH端口，service是远端的ssh账号 </span>
+<span class="preprocessor"># <span class="number">44306</span>:<span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>是自己本地的port和ip </span>
+ssh -fN -L44306:<span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">4306</span> service@<span class="number">123.206</span><span class="number">.76</span><span class="number">.219</span> -p2009    
+</code></pre><p>这个命令特别“绕”，不记录一下根本记不住…它实现的功能是ssh的端口映射，通过ssh将一个远端ip:port映射到本地，适用于非同一局域网内的机器。<br>在我们的项目中因为腾讯的服务器必须使用腾讯云，跟阿里云不是在一个局域网内的，但是他们之间又要有mysql的访问需求，所以通过ssh做了这个端口映射，记录一下。</p>
 
       
     </div>
@@ -125,11 +153,11 @@ var duoshuoQuery = {short_name:"shafeng"};
   
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
-    <li><a href="/tags/Linux/">Linux</a><small>13</small></li>
+    <li><a href="/tags/Linux/">Linux</a><small>14</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>24</small></li>
+    <li><a href="/tags/博客/">博客</a><small>25</small></li>
   
     <li><a href="/tags/技术/">技术</a><small>22</small></li>
   

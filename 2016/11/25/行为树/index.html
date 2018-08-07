@@ -62,7 +62,514 @@
     </header>
     <div class="entry">
       
-        <h1 id="用行为树来控制AI行为">用行为树来控制AI行为</h1>
+        <h1 id="用行为树来控制AI行为">用行为树来控制AI行为</h1><p>项目上线的时候有很多竞品压力，关于AI方面并没有做太多的规则，为了快速上线服务器只是实现了AI的移动和攻击两个行为，其移动规则只是随机寻点移动，攻击行为也只是攻击最近的敌人。随着项目的发展，策划对AI的智能程度提出了要求，所以我们对AI的功能进行了加强。 我在之前的RPG项目中也做过AI，是基于状态机的，简单的RPG野外怪物使用状态机完全可以满足需求，但是目前的项目对AI行为的要求比较细致，所以使用了行为树。记录一下行为树的基本原理和使用情况</p>
+<h2 id="行为树的基本组成">行为树的基本组成</h2><p>最简单的AI使用<code>if else</code>语句就可以实现,但是随着AI行为的复杂度越来越高,要提供给策划配置等等需求的出现,必须使用一种更为方便清晰的方法来实现AI,行为树就是一个不错的选择。要实现一个行为树，首先要把怪物的各种行为模块化，比如巡逻行为，追击行为，普通攻击行为，技能攻击行为，各种条件判断行为(自身血量是否不足30%，队友人数是否少于1个…)等等，之后利用行为树的原理将这些模块进行组合，以达到行为的多样性，这种多样性的组合是基于行为数量指数级增加的，所以提供给策划配置的灵活性非常好。一棵行为树表示一组AI逻辑，要执行这组AI逻辑，需要从根节点开始遍历执行整棵树，遍历执行的过程中，父节点根据其自身类别选择需要执行的子节点并执行，子节点执行完后将执行结果返回给父节点， 一棵普通的行为树主要由四种节点组成，我把他们分为两类，枝干节点和叶子节点。枝干节点肯定不是行为树的末端，它们主要的功能是对自己枝干下的节点进行“管理”，如何执行自己枝干下的节点是枝干节点需要做的事情。叶子节点一定是行为树的末端，它们通常是一个动作，如攻击，移动等等。</p>
+<p>–顺序节点（Sequence）：枝干节点，顺序执行子节点，只要碰到一个子节点返回false，则返回false；否则返回true。</p>
+<p>–选择节点（Selector）：枝干节点，顺序执行子节点，只要碰到一个子节点返回true，则返回true；否则返回false。</p>
+<p>–条件节点（Condition）：叶子节点，执行条件判断，返回判断结果。</p>
+<p>–动作节点（Action）：叶子节点，执行设定的动作，一般返回true。</p>
+<p>下面是一棵简单的普通行为树，这棵行为树的根节点是一个选择节点（Selector），根节点下有两个顺序节点的枝干，每个顺序节点下面是叶子节点的条件和动作。把这课行为树用语言描述一下就是，怪物开始行动，执行根节点，首先选择移动还是攻击，顺序执行移动（11）和攻击（12），当执行移动（11）的条件中战场内无敌人（111）为true，那么继续执行下面的条件自身范围内是否有友方（112），如果返回true那么就执行定点移动行为（113），执行113结束后整棵行为树执行结束，从根节点开始再次执行。如果111或者112返回false，那么执行攻击（12），如果视野范围内有敌人，那么就攻击距离最近的敌人（122），如果没有敌人，那么整棵行为树执行结束，从根节点再次开始执行。</p>
+<hr>
+<p><img src="/2016/11/25/行为树/1.png" alt="普通行为树"></p>
+<hr>
+<p>项目中的代码实现：</p>
+<pre><code><span class="comment">//////////////////////////////////////////////////////////////////////////</span>
+<span class="comment">///</span>
+<span class="comment">///    @file     Behaviour.h</span>
+<span class="comment">///</span>
+<span class="comment">///    @date    2016-11-22  20:02:52</span>
+<span class="comment">///</span>
+<span class="comment">///    @brief    行为树</span>
+<span class="comment">///</span>
+<span class="comment">//////////////////////////////////////////////////////////////////////////</span>
+<span class="preprocessor">#<span class="keyword">ifndef</span> __behaviour__Behaviour__</span>
+<span class="preprocessor">#<span class="keyword">define</span> __behaviour__Behaviour__</span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;vector&gt;</span></span>
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;_BaseGameObject.h&gt;</span></span>
+<span class="keyword">namespace</span> BehaviorTree
+{
+    <span class="comment">//每个行为的状态</span>
+    <span class="keyword">enum</span> Status
+    {
+        BH_INVALID, <span class="comment">//无效</span>
+        BH_SUCCESS,    <span class="comment">//成功</span>
+        BH_FAILURE,    <span class="comment">//失败</span>
+        BH_RUNNING,    <span class="comment">//执行中</span>
+    };
+    <span class="comment">//行为基类</span>
+    <span class="keyword">class</span> Behavior
+    {
+    <span class="keyword">public</span>:
+        <span class="function"><span class="keyword">virtual</span> Status <span class="title">update</span><span class="params">(uint32&amp; delay)</span></span>{<span class="keyword">return</span> BH_SUCCESS;};
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onInitialize</span><span class="params">()</span></span>{}
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onTerminate</span><span class="params">(Status)</span> </span>{}
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">addBehavior</span><span class="params">(Behavior* node)</span></span>{}
+        <span class="function"><span class="keyword">virtual</span>    <span class="keyword">void</span> <span class="title">init</span><span class="params">()</span></span>{};
+
+        Behavior():
+            m_eStatus (BH_INVALID)
+            ,action_id_(<span class="number">0</span>)
+        {};
+        <span class="keyword">virtual</span> ~Behavior()
+        {};
+        <span class="function">Status <span class="title">tick</span><span class="params">(uint32&amp; delay)</span></span>;
+        <span class="function">Status <span class="title">getState</span><span class="params">()</span>
+        </span>{
+            <span class="keyword">return</span> m_eStatus;
+        }
+        <span class="function"><span class="keyword">bool</span> <span class="title">setState</span><span class="params">(uint32 _eStatus)</span>
+        </span>{
+            m_eStatus = (BehaviorTree::Status)_eStatus;
+            <span class="keyword">return</span> <span class="literal">true</span>;
+        }
+    <span class="keyword">private</span>:
+        Status m_eStatus;
+    <span class="keyword">public</span>:
+        uint32 action_id_;
+        uint32 std_id_;
+        <span class="keyword">typedef</span> <span class="built_in">std</span>::<span class="built_in">vector</span> &lt;Behavior*&gt; Behaviors;
+        Behaviors m_Children;
+    };
+    <span class="comment">//枝类</span>
+    <span class="keyword">class</span> Composite : <span class="keyword">public</span> Behavior
+    {
+    <span class="keyword">public</span>:
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onTerminate</span><span class="params">(Status)</span> </span>{}
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">addBehavior</span><span class="params">(Behavior* node)</span>
+        </span>{
+            m_Children.push_back(node);
+        }
+    };
+    <span class="comment">//顺序节点</span>
+    <span class="keyword">class</span> Sequence : <span class="keyword">public</span> Composite
+    {
+    <span class="keyword">public</span>:
+
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onInitialize</span><span class="params">()</span></span>;
+        <span class="function"><span class="keyword">virtual</span> Status <span class="title">update</span><span class="params">(uint32&amp; delay)</span></span>;
+
+        Behaviors::iterator m_CurrentChild;
+    };
+    <span class="comment">//选择节点</span>
+    <span class="keyword">class</span> Selector : <span class="keyword">public</span> Composite
+    {
+    <span class="keyword">public</span>:
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onInitialize</span><span class="params">()</span></span>;
+        <span class="function"><span class="keyword">virtual</span> Status <span class="title">update</span><span class="params">(uint32&amp; delay)</span></span>;
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onTerminate</span><span class="params">()</span></span>;
+        Behaviors::iterator m_CurrentChild;
+    };
+    <span class="comment">//并行节点</span>
+    <span class="keyword">class</span> Parallel : <span class="keyword">public</span> Composite
+    {
+    <span class="keyword">public</span>:
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onInitialize</span><span class="params">()</span></span>;
+        <span class="function"><span class="keyword">virtual</span> Status <span class="title">update</span><span class="params">(uint32&amp; delay)</span></span>;
+        Behaviors::iterator m_CurrentChild;
+    };
+
+    <span class="comment">//并行节点(全部节点执行完成结束)</span>
+    <span class="keyword">class</span> ParallelEx : <span class="keyword">public</span> Composite
+    {
+    <span class="keyword">public</span>:
+        <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onInitialize</span><span class="params">()</span></span>;
+        <span class="function"><span class="keyword">virtual</span> Status <span class="title">update</span><span class="params">(uint32&amp; delay)</span></span>;
+        Behaviors::iterator m_CurrentChild;
+    };
+}
+<span class="preprocessor">#<span class="keyword">endif</span> <span class="comment">//__behaviour__Behaviour__</span></span>
+
+
+
+
+<span class="comment">//////////////////////////////////////////////////////////////////////////</span>
+<span class="comment">///</span>
+<span class="comment">///    @file     Behaviour.cpp</span>
+<span class="comment">///</span>
+<span class="comment">///</span>
+<span class="comment">///    @brief    行为树</span>
+<span class="comment">///</span>
+<span class="comment">//////////////////////////////////////////////////////////////////////////</span>
+
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">"Behaviour.h"</span></span>
+<span class="keyword">namespace</span> BehaviorTree
+{
+    Status Behavior::tick(uint32&amp; delay)
+    {
+        <span class="keyword">if</span> (m_eStatus == BH_INVALID)
+        {
+            onInitialize();
+        }
+        m_eStatus = update(delay);
+        <span class="keyword">if</span> (m_eStatus != BH_RUNNING)
+        {
+            onTerminate(m_eStatus);
+        }
+        <span class="keyword">return</span> m_eStatus;
+    }
+
+    <span class="keyword">void</span> Sequence::onInitialize()
+    {
+        m_CurrentChild = m_Children.begin();
+    }
+    Status Sequence::update(uint32&amp; delay)
+    {
+        <span class="keyword">while</span> (<span class="literal">true</span>)
+        {
+            Status s = (*m_CurrentChild)-&gt;tick(delay);
+            <span class="keyword">if</span> (s != BH_SUCCESS) {
+                <span class="keyword">return</span> s;
+            }
+
+            <span class="comment">// 最后一个节点，执行完了</span>
+            <span class="keyword">if</span>(++m_CurrentChild == m_Children.end())
+            {
+                m_CurrentChild = m_Children.begin();
+                <span class="keyword">return</span> BH_SUCCESS;
+            }
+        }
+        <span class="keyword">return</span> BH_INVALID;
+    }
+
+    <span class="keyword">void</span> Selector::onInitialize()
+    {
+        m_CurrentChild = m_Children.begin();
+    }
+    Status Selector::update(uint32&amp; delay)
+    {
+        <span class="keyword">while</span> (<span class="literal">true</span>)
+        {
+            Status s = (*m_CurrentChild)-&gt;tick(delay);
+
+            <span class="keyword">if</span> (s != BH_FAILURE) {
+
+                <span class="keyword">return</span> s;
+            }
+
+            <span class="keyword">if</span>(++m_CurrentChild == m_Children.end())
+            {
+                m_CurrentChild = m_Children.begin();
+                <span class="keyword">return</span> BH_FAILURE;
+            }
+        }
+        <span class="keyword">return</span> BH_INVALID;
+    }
+
+    <span class="keyword">void</span> Selector::onTerminate()
+    {
+        setState(BH_INVALID);
+    }
+
+
+    <span class="keyword">void</span> Parallel::onInitialize()
+    {
+        m_CurrentChild = m_Children.begin();
+    }
+
+    Status Parallel::update( uint32&amp; delay )
+    {
+        <span class="keyword">return</span> BH_INVALID;
+    }
+
+
+    <span class="keyword">void</span> ParallelEx::onInitialize()
+    {
+        m_CurrentChild = m_Children.begin();
+    }
+
+    Status ParallelEx::update( uint32&amp; delay )
+    {
+        <span class="keyword">while</span> (<span class="literal">true</span>)
+        {
+            <span class="keyword">bool</span> b_break = <span class="literal">true</span>;
+            uint32 delay_prev=delay;
+            <span class="keyword">for</span> (<span class="keyword">auto</span> ite = m_Children.begin();ite!=m_Children.end();++ite)
+            {
+                Status s = (*ite)-&gt;tick(delay);
+                <span class="keyword">if</span> (delay&lt;delay_prev)
+                {
+                    delay_prev = delay;
+                }
+                <span class="keyword">if</span> (BH_RUNNING==s)
+                {
+                    b_break = <span class="literal">false</span>;
+                }
+            }
+            delay = delay_prev;
+            <span class="comment">//if ( delay&lt;100 )</span>
+            <span class="comment">//{</span>
+            <span class="comment">//    delay = 100;</span>
+            <span class="comment">//}</span>
+            <span class="keyword">if</span> (<span class="literal">true</span> == b_break)
+            {
+                <span class="keyword">return</span> BH_SUCCESS;
+            }
+            <span class="keyword">else</span>
+            {
+                <span class="keyword">return</span> BH_RUNNING;
+            }
+        }
+        <span class="keyword">return</span> BH_INVALID;
+    }
+}
+</code></pre><p>上面的代码是行为树的基类，四种节点中的叶子节点（条件节点，动作节点）可以直接继承Behavior类，顺序节点是Sequence类，选择节点是Selector，我的代码里还加入了一种扩展的节点，并行节点Parallel类，这种枝干节点会同时执行枝干下的节点，不论这些节点返回什么，加入这种节点主要是为了实现同时移动同时攻击这种动作。我们项目中继承自Behavior类的部分代码（一个动作节点，一个条件节点）：</p>
+<pre><code><span class="comment">//定点循环移动行为</span>
+<span class="keyword">class</span> CActionMoveLoop : <span class="keyword">public</span> BehaviorTree::Behavior
+{
+<span class="keyword">public</span>:
+    CActionMoveLoop(IHZArenaPlayer* player,uint32 action_id);
+    ~CActionMoveLoop();
+<span class="keyword">public</span>:
+    <span class="keyword">virtual</span> BehaviorTree::<span class="function">Status <span class="title">update</span><span class="params">(uint32&amp; delay)</span></span>;
+    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onInitialize</span><span class="params">()</span></span>;
+    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onTerminate</span><span class="params">(BehaviorTree::Status)</span></span>{setState(BehaviorTree::BH_INVALID);};
+<span class="keyword">private</span>:
+    <span class="function">World3DPosition            <span class="title">GetoutOnePoint</span><span class="params">(<span class="keyword">bool</span>&amp; result)</span></span>;
+    int32                    point_index_;
+    int32                    order_type_;<span class="comment">//0顺时针，1逆时针</span>
+    <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;WorldPosition&gt;        path_point_;        <span class="comment">///&lt; 路径</span>
+    <span class="function"><span class="keyword">void</span>                    <span class="title">init</span><span class="params">()</span></span>;
+    IPlayer*                player_;
+    CFightAIPlugin*            ai_plugin_;
+    World3DPosition            target_point_;
+};
+
+
+<span class="comment">//检测条件，属性检测</span>
+<span class="keyword">class</span> CConditionProp : <span class="keyword">public</span> BehaviorTree::Behavior
+{
+<span class="keyword">public</span>:
+    CConditionProp(IHZArenaPlayer* player,uint32 action_id);
+    ~CConditionProp(){};
+<span class="keyword">public</span>:
+    <span class="keyword">virtual</span> BehaviorTree::<span class="function">Status <span class="title">update</span><span class="params">(uint32&amp; delay)</span></span>;
+    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onInitialize</span><span class="params">()</span></span>;
+    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">onTerminate</span><span class="params">(BehaviorTree::Status)</span></span>{};
+    <span class="function"><span class="keyword">void</span>                    <span class="title">init</span><span class="params">()</span></span>;
+<span class="keyword">private</span>:
+    uint32                    compare_type_;
+    uint32                    prop_value_;
+    uint32                    prop_percent_;
+    IPlayer*                player_;
+    CFightAIPlugin*            ai_plugin_;
+};
+</code></pre><p>策划通过绘制行为树逻辑图来梳理逻辑，然后通过逻辑图输出逻辑配置到xml中，生成一棵行为树的代码：</p>
+<pre><code>BehaviorTree::Behavior* CFightAIPlugin::create_tree_root( <span class="keyword">const</span> StdTreeRoot_data::IStdRoot* std_root )
+{
+    <span class="keyword">switch</span> (std_root-&gt;get_RootType())
+    {
+        <span class="comment">//顺序</span>
+    <span class="keyword">case</span> <span class="number">1</span>:
+        {
+            BehaviorTree::Sequence* rootseq = <span class="keyword">new</span> BehaviorTree::Sequence();
+            <span class="keyword">for</span> (uint32 i = <span class="number">0</span>; i&lt;std_root-&gt;StdChild_size(); i++) 
+            {
+                auto std_child = std_root-&gt;get_StdChild(i);
+                <span class="keyword">if</span> (std_child-&gt;get_NodeType()==<span class="number">1</span>)
+                {
+                    auto std_node = get_StdTreeRoot_manager()-&gt;find_StdRoot_byRootID(std_child-&gt;get_ChildID());
+                    <span class="keyword">if</span> (<span class="keyword">NULL</span> == std_node)
+                    {
+                        <span class="keyword">continue</span>;
+                    }
+                    rootseq-&gt;m_Children.push_back(create_tree_root(std_node));
+                }
+                <span class="keyword">else</span>
+                {
+                    auto std_node = get_StdTreeAction_manager()-&gt;find_StdAction_byActionID(std_child-&gt;get_ChildID());
+                    <span class="keyword">if</span> (<span class="keyword">NULL</span> == std_node)
+                    {
+                        <span class="keyword">continue</span>;
+                    }
+                    rootseq-&gt;m_Children.push_back(create_tree_leaf(std_node));
+                }
+            }
+            <span class="keyword">return</span> rootseq;
+        }
+        <span class="comment">//选择</span>
+    <span class="keyword">case</span> <span class="number">2</span>:
+        {
+            BehaviorTree::Selector* rootsel = <span class="keyword">new</span> BehaviorTree::Selector();
+            <span class="keyword">for</span> (uint32 i = <span class="number">0</span>; i&lt;std_root-&gt;StdChild_size(); i++) 
+            {
+                auto std_child = std_root-&gt;get_StdChild(i);
+                <span class="keyword">if</span> (std_child-&gt;get_NodeType()==<span class="number">1</span>)
+                {
+                    auto std_node = get_StdTreeRoot_manager()-&gt;find_StdRoot_byRootID(std_child-&gt;get_ChildID());
+                    <span class="keyword">if</span> (<span class="keyword">NULL</span> == std_node)
+                    {
+                        <span class="keyword">continue</span>;
+                    }
+                    rootsel-&gt;m_Children.push_back(create_tree_root(std_node));
+                }
+                <span class="keyword">else</span>
+                {
+                    auto std_node = get_StdTreeAction_manager()-&gt;find_StdAction_byActionID(std_child-&gt;get_ChildID());
+                    <span class="keyword">if</span> (<span class="keyword">NULL</span> == std_node)
+                    {
+                        <span class="keyword">continue</span>;
+                    }
+                    rootsel-&gt;m_Children.push_back(create_tree_leaf(std_node));
+                }
+            }
+            <span class="keyword">return</span> rootsel;
+        }
+        <span class="comment">//并行</span>
+    <span class="keyword">case</span> <span class="number">3</span>:
+        {
+            BehaviorTree::ParallelEx* rootpara = <span class="keyword">new</span> BehaviorTree::ParallelEx();
+            <span class="keyword">for</span> (uint32 i = <span class="number">0</span>; i&lt;std_root-&gt;StdChild_size(); i++) 
+            {
+                auto std_child = std_root-&gt;get_StdChild(i);
+                <span class="keyword">if</span> (std_child-&gt;get_NodeType()==<span class="number">1</span>)
+                {
+                    auto std_node = get_StdTreeRoot_manager()-&gt;find_StdRoot_byRootID(std_child-&gt;get_ChildID());
+                    <span class="keyword">if</span> (<span class="keyword">NULL</span> == std_node)
+                    {
+                        <span class="keyword">continue</span>;
+                    }
+                    rootpara-&gt;m_Children.push_back(create_tree_root(std_node));
+                }
+                <span class="keyword">else</span>
+                {
+                    auto std_node = get_StdTreeAction_manager()-&gt;find_StdAction_byActionID(std_child-&gt;get_ChildID());
+                    <span class="keyword">if</span> (<span class="keyword">NULL</span> == std_node)
+                    {
+                        <span class="keyword">continue</span>;
+                    }
+                    rootpara-&gt;m_Children.push_back(create_tree_leaf(std_node));
+                }
+            }
+            <span class="keyword">return</span> rootpara;
+        }
+        <span class="comment">//动作或者条件</span>
+    <span class="keyword">case</span> <span class="number">4</span>:
+        {
+            RLOG(MINFO)&lt;&lt;<span class="string">"root can not be action!!!"</span>;
+            <span class="keyword">break</span>;
+        }
+    <span class="keyword">default</span>:
+        <span class="keyword">break</span>;
+    }
+    RLOG(MINFO)&lt;&lt;<span class="string">"root wrong:"</span>&lt;&lt;std_root-&gt;get_RootID();
+    <span class="keyword">return</span> <span class="keyword">NULL</span>;
+}
+
+
+BehaviorTree::Behavior* CFightAIPlugin::create_tree_leaf( <span class="keyword">const</span> StdTreeAction_data::IStdAction* std_action )
+{
+    <span class="keyword">switch</span> (std_action-&gt;get_ActionType())
+    {
+    <span class="comment">//移动行为</span>
+    <span class="keyword">case</span> <span class="number">1</span>:
+        {
+            <span class="keyword">return</span> create_move_action(std_action);
+            <span class="keyword">break</span>;
+        }
+    <span class="comment">//条件检测</span>
+    <span class="keyword">case</span> <span class="number">2</span>:
+        {
+            <span class="keyword">return</span> create_check_action(std_action);
+            <span class="keyword">break</span>;
+        }
+    <span class="comment">//攻击行为</span>
+    <span class="keyword">case</span> <span class="number">3</span>:
+        {
+            <span class="keyword">return</span> create_attack_action(std_action);
+            <span class="keyword">break</span>;
+        }
+    <span class="comment">//其他行为</span>
+    <span class="keyword">case</span> <span class="number">4</span>:
+        {
+            <span class="keyword">return</span> create_other_action(std_action);
+            <span class="keyword">break</span>;
+        }
+    <span class="keyword">default</span>:
+        {
+            <span class="keyword">break</span>;
+        }
+
+    }
+    RLOG(MINFO)&lt;&lt;<span class="string">"No This Big Type:"</span>&lt;&lt;std_action-&gt;get_ActionSubType()&lt;&lt;<span class="string">" id:"</span>&lt;&lt;std_action-&gt;get_ActionID();
+    <span class="keyword">return</span> <span class="keyword">NULL</span>;
+}
+
+
+BehaviorTree::Behavior* CFightAIPlugin::create_move_action( <span class="keyword">const</span> StdTreeAction_data::IStdAction* std_action )
+{
+    <span class="keyword">switch</span> (std_action-&gt;get_ActionSubType())
+    {
+    <span class="comment">// 多坐标点顺序移动：到过的坐标点会被移除</span>
+    <span class="keyword">case</span> <span class="number">1</span>:
+        {
+            CActionMovePath *move_path = <span class="keyword">new</span> CActionMovePath(m_pPlayerObj,std_action-&gt;get_ActionID());
+            <span class="keyword">return</span> move_path;
+        }
+    <span class="comment">// 多坐标点循环移动：反复循环</span>
+    <span class="keyword">case</span> <span class="number">2</span>:
+        {
+            CActionMoveLoop *move_loop = <span class="keyword">new</span> CActionMoveLoop(m_pPlayerObj,std_action-&gt;get_ActionID());
+            <span class="keyword">return</span> move_loop;
+        }
+    <span class="comment">// 坐标点半径巡逻</span>
+    <span class="keyword">case</span> <span class="number">3</span>:
+        {
+            CActionMovePatrol *move_patrol = <span class="keyword">new</span> CActionMovePatrol(m_pPlayerObj,std_action-&gt;get_ActionID());
+            <span class="keyword">return</span> move_patrol;
+        }
+    <span class="comment">// 指定id移动</span>
+    <span class="keyword">case</span> <span class="number">4</span>:
+        {
+            CActionMoveToAI *move_ai = <span class="keyword">new</span> CActionMoveToAI(m_pPlayerObj,std_action-&gt;get_ActionID());
+            <span class="keyword">return</span> move_ai;
+        }
+    <span class="comment">// 最近敌人移动</span>
+    <span class="keyword">case</span> <span class="number">5</span>:
+        {
+            CActionMoveToCloseEnemy *move_close_enemy = <span class="keyword">new</span> CActionMoveToCloseEnemy(m_pPlayerObj,std_action-&gt;get_ActionID());
+            <span class="keyword">return</span> move_close_enemy;
+        }
+    <span class="comment">// 占旗点巡逻</span>
+    <span class="keyword">case</span> <span class="number">6</span>:
+        {
+            CActionMoveFlag *move_patrol_flag = <span class="keyword">new</span> CActionMoveFlag(m_pPlayerObj,std_action-&gt;get_ActionID());
+            <span class="keyword">return</span> move_patrol_flag;
+        }
+    <span class="keyword">default</span>:
+        {
+            <span class="keyword">break</span>;
+        }
+
+    }
+    RLOG(MINFO)&lt;&lt;<span class="string">"No This Move Action Type:"</span>&lt;&lt;std_action-&gt;get_ActionSubType()&lt;&lt;<span class="string">" id:"</span>&lt;&lt;std_action-&gt;get_ActionID();
+    <span class="keyword">return</span> <span class="keyword">NULL</span>;
+}
+</code></pre><p>这些代码片段包含了行为树的创建，通过配置表来生成一棵复杂的行为树。然后我们还需要在一个循环中执行这棵树的逻辑：</p>
+<pre><code>uint32 CFightAIPlugin::AIUpdateBT()
+{
+    <span class="keyword">if</span> (behavior_tree_==<span class="literal">NULL</span>)
+    {
+        <span class="keyword">return</span> <span class="number">0</span>;
+    }
+
+    <span class="keyword">if</span> (BehaviorTree::BH_RUNNING != behavior_status_)
+    {
+        behavior_now_ = behavior_tree_;
+        behavior_now_-&gt;onInitialize();
+        RLOG(MINFO)&lt;&lt;<span class="string">"----------loop---------"</span>;<span class="comment">//执行结束，从树根重新开始执行</span>
+    }
+    uint32 delay = <span class="number">1000</span>;
+    behavior_status_ = behavior_now_-&gt;update(delay);<span class="comment">//update当前的节点</span>
+    RLOG(MINFO)&lt;&lt;<span class="string">"ai delay:"</span>&lt;&lt;delay;
+    <span class="keyword">return</span> delay;
+}
+</code></pre><p><code>AIUpdateBT()</code>函数会在定时器下每间隔一段时间(100~1000ms,根据自己的需求调整每一次update的时间)update一次，来驱动整棵树的执行。</p>
+<p>掌握了行为树的基本原理就可以实现各种各样复杂的AI逻辑并且条理清晰，便于管理，不会因为逻辑的复杂而使代码混乱，下面的图片展示了一个比上面例子更复杂的逻辑，你完全可以根据自己项目的需要来配置一个更大的行为树，它会严格按照你的配置来执行。</p>
+<hr>
+<p><img src="/2016/11/25/行为树/2.png" alt="行为树"></p>
+<hr>
+
       
     </div>
     <footer>
@@ -124,11 +631,11 @@ var duoshuoQuery = {short_name:"shafeng"};
   
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
-    <li><a href="/tags/Linux/">Linux</a><small>13</small></li>
+    <li><a href="/tags/Linux/">Linux</a><small>14</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>24</small></li>
+    <li><a href="/tags/博客/">博客</a><small>25</small></li>
   
     <li><a href="/tags/技术/">技术</a><small>22</small></li>
   
