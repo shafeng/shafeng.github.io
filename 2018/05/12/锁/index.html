@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>ASan(Linux)，gcc4.8以上版本自带的内存检查工具 | Shafeng`s blog</title>
+  <title>记一次协程中使用线程锁造成的问题以及各种锁的总结 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="ASan(Linux)，gcc4.8以上版本自带的内存检查工具"/>
+  <meta property="og:title" content="记一次协程中使用线程锁造成的问题以及各种锁的总结"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,20 +52,91 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2017-05-10T07:55:00.000Z"><a href="/2017/05/10/asan/">2017-05-10</a></time>
+        <time datetime="2018-05-12T14:00:00.000Z"><a href="/2018/05/12/锁/">2018-05-12</a></time>
       
       
   
-    <h1 class="title">ASan(Linux)，gcc4.8以上版本自带的内存检查工具</h1>
+    <h1 class="title">记一次协程中使用线程锁造成的问题以及各种锁的总结</h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="惊天大霹雳，超级好用的Linux程序内存检查工具，AddressSanitizer_(ASan)">惊天大霹雳，超级好用的Linux程序内存检查工具，AddressSanitizer (ASan)</h2><p>最近线上的程序总是莫名其妙崩溃,因为我们的项目使用了分布负载的机制,对于玩家的影响其实很小,但是我肯定是忍不了的…程序崩溃的core文件里面完全找不到问题所在,初步分析应该是野指针导致,仔细分析程序之后并没有发现内存释放后没有置null的情况,很可能是多线程导致的,然而代码量太大,大海捞针实在是无法找到问题所在,所以我找到了asan,项目之前一直用gcc4.4编译,完全不知道asan的存在,asan是gcc4.8以上gcc自带的内存检测库,开发自google,在gcc4.8版本以上编译链接的时候加入指定的参数即可,非常的方便好用,而且对程序的性能影响并不大,如果你的程序平时耗费的cpu和内存资源不超过50%,那么完全可以把加入asan的程序放到线上去跑.</p>
-<p>首先在编译机上升级gcc,我直接升级到了最新版本gcc6.3版本(写这篇记录的时候最新版已经到gcc7.1了),升级后系统库中会新加入libasan,我们使用asan的功能都是来自于这里.<br>然后对代码进行编译和链接,编译时使用 -g -O2 -fsanitize=address -fno-omit-frame-pointer .-fsanitize=address命令就是将asan编译进来,这样编译的.o文件在运行时stack上申请的内存都会被asan接管,如果出问题asan会第一时间输出报告,如内存越界和各种非法访问. -fno-omit-frame-pointer可以防止一些优化导致指针丧失可读性.  链接时使用-fsanitize=address -fno-omit-frame-pointer选项可以让程序在heap上申请的内存被asan接管,这样asan会监控new和delete来输出内存泄漏的报告.</p>
-<p>大功告成,使用asan编译和链接的程序生成好之后放到了线上环境运营,很快出现了一次宕机,asan会直接把自己的输出当做error输出,你可以查看到当前导致宕机的内存位置和变量名,文件行数,变量来源,线程信息等等非常全面的信息,得到这些信息后很快就分析出原来崩溃来自一个多线程共享的模块,而当前模块在多线程竞争资源的地方没有加锁,导致同一块内存被写坏. 问题完美解决,程序再也不会宕机了.</p>
-<p>总结一下,asan在检测程序内存方面的功能实在是强大,之前也用过valgrind来检查内存泄漏,但是valgrind对性能的影响实在是太大,完全不能放到线上环境这样真实的环境下测试,而且asan给出的问题报告相当详细,基本上看一次错误报告就能解决当前导致宕机的问题,而core文件的信息由于优化和其他程序上下文的差异会导致提供的信息基本上没什么作用.宕机十次,十个core文件也无法准确定位某些野指针错误的问题.对于asan,只有一个词能表达我的心情,那就是相见恨晚…asan你值得拥有,谁用谁知道.</p>
+        <h1 id="锁">锁</h1><p>我习惯把进程或线程同步互斥的控制方法称之为”锁”，自旋锁、互斥锁、信号量、临界区各种各样的锁一大堆，这些名字看起来都特别高大上，但是其实他们就是实现了线程间对共享数据的一个安全访问，有些锁是可以用在不同进程的线程间的，比如互斥锁和信号量。有些锁可以设置进入这个锁的次数，比如信号量。如果你的程序不需要在多个进程的线程之间加锁，那么使用临界区就可以了。<br><br><br>我们的项目使用的大部分是临界区，在codis和协程上线后出现了一个问题，<u>由于每个玩家是一个单独的协程，在多线程处理一块共享数据的时候，不同的协程进入同一个函数进行加锁操作，因为函数的后续进行了redis的异步访问，这些协程可能在没有解锁的情况下被挂起，如果这个函数的访问次数增多，那么其他需要处理共享数据的线程就会等待，造成某些逻辑的卡死。</u>由于第一时间就想到了该问题的解决办法，所以并没有继续深入研究导致程序假死的具体步骤。<br><br></p>
+<p>记录一下出问题的函数以及解决后的函数:</p>
+<pre><code><span class="comment">///获得角色的摘要信息指针</span>
+TRoleData * CRoleDataService::FindRoleData(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span> &amp; _roleid)
+{
+    SVR_BASE::<span class="function">CSVRCriticalEnter <span class="title">t_autolock</span><span class="params">(&amp;m_lock)</span></span>;
+    RoleMap::const_iterator t_it = m_mapRoleByRoleId.find(_roleid);
+    <span class="keyword">if</span>(t_it == m_mapRoleByRoleId.end())
+    {
+        SVR_BASE::<span class="keyword">coroutine_t</span> t_coroutine = SVR_BASE::co_current();
+        MASSERT( t_coroutine!=<span class="literal">NULL</span> );
+        TRoleData *    t_ptrRole = <span class="keyword">new</span> TRoleData();
+        t_ptrRole-&gt;strRoleId = <span class="string">""</span>;
+        <span class="keyword">if</span> ( <span class="literal">true</span> == CRoleDataService::Instance._redis_command_cb( REDIS_CLT::HGETALL(ROLE_SUMMARY::_SUMMARY_ROLE_+_roleid), 
+            std_tr1::bind(_co_rolesummary_callback, t_coroutine, t_ptrRole, std_tr1::_1 )))
+        {
+            SVR_BASE::co_wait_io_complete();
+        }
+        <span class="keyword">if</span>(<span class="string">""</span> != t_ptrRole-&gt;strRoleId)
+        {
+            m_mapRoleByRoleId.insert(<span class="built_in">std</span>::make_pair(_roleid,t_ptrRole));
+        }
+        <span class="keyword">else</span>
+        {
+            <span class="keyword">delete</span> t_ptrRole;
+            t_ptrRole = <span class="literal">NULL</span>;
+        }
+        <span class="keyword">return</span> t_ptrRole;
+    }
+    <span class="keyword">else</span>
+    {
+        <span class="keyword">return</span> t_it-&gt;second;
+    }
+}
+</code></pre><p>上面的函数使用了我们项目中自动释放的临界区对象SVR_BASE::CSVRCriticalEnter来对m_mapRoleByRoleId数据进行加锁，这个对象的生命周期到函数退出为止，但是 SVR_BASE::co_wait_io_complete() 会把该协程挂起，如果这个协程不再被激活，那么锁将永远不会被解开，其他线程中用到这个锁的地方就会一直处于等待状态。修改后的代码：</p>
+<pre><code><span class="comment">///获得角色的摘要信息指针</span>
+TRoleData * CRoleDataService::FindRoleData(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span> &amp; _roleid)
+{
+    m_lock.lock();
+    RoleMap::const_iterator t_it = m_mapRoleByRoleId.find(_roleid);
+    <span class="keyword">if</span>(t_it != m_mapRoleByRoleId.end())
+    {
+        m_lock.unlock();
+        <span class="keyword">return</span> t_it-&gt;second;
+    }
+    m_lock.unlock();
+    SVR_BASE::<span class="keyword">coroutine_t</span> t_coroutine = SVR_BASE::co_current();
+    MASSERT( t_coroutine!=<span class="literal">NULL</span> );
+    TRoleData *    t_ptrRole = <span class="keyword">new</span> TRoleData();
+    t_ptrRole-&gt;strRoleId = <span class="string">""</span>;
+    <span class="keyword">if</span> ( <span class="literal">true</span> == CRoleDataService::Instance._redis_command_cb( REDIS_CLT::HGETALL(ROLE_SUMMARY::_SUMMARY_ROLE_+_roleid), 
+        std_tr1::bind(_co_rolesummary_callback, t_coroutine, t_ptrRole, std_tr1::_1 )))
+    {
+        SVR_BASE::co_wait_io_complete();
+    }
+    <span class="keyword">if</span>(<span class="string">""</span> != t_ptrRole-&gt;strRoleId)
+    {
+        m_lock.lock();
+        t_it = m_mapRoleByRoleId.find(_roleid);
+        <span class="keyword">if</span> ( t_it!= m_mapRoleByRoleId.end() )
+        {
+            <span class="keyword">delete</span> t_it-&gt;second;
+            m_mapRoleByRoleId.erase(t_it);
+        }
+        m_mapRoleByRoleId.insert(<span class="built_in">std</span>::make_pair(_roleid,t_ptrRole));
+        m_lock.unlock();
+    }
+    <span class="keyword">else</span>
+    {
+        <span class="keyword">delete</span> t_ptrRole;
+        t_ptrRole = <span class="literal">NULL</span>;
+    }
+    <span class="keyword">return</span> t_ptrRole;
+}
+</code></pre><p>修改后的代码只在操作m_mapRoleByRoleId这块共享数据的时候进行了加解锁操作，保证了锁不会被协程挂起。</p>
 
       
     </div>

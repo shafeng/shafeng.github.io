@@ -119,6 +119,113 @@ iptables -A OUTPUT -p icmp --icmp-<span class="built_in">type</span> <span class
     <header>
       
         <div class="icon"></div>
+        <time datetime="2018-05-12T14:00:00.000Z"><a href="/2018/05/12/锁/">2018-05-12</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/05/12/锁/">记一次协程中使用线程锁造成的问题以及各种锁的总结</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="锁">锁</h1><p>我习惯把进程或线程同步互斥的控制方法称之为”锁”，自旋锁、互斥锁、信号量、临界区各种各样的锁一大堆，这些名字看起来都特别高大上，但是其实他们就是实现了线程间对共享数据的一个安全访问，有些锁是可以用在不同进程的线程间的，比如互斥锁和信号量。有些锁可以设置进入这个锁的次数，比如信号量。如果你的程序不需要在多个进程的线程之间加锁，那么使用临界区就可以了。<br><br><br>我们的项目使用的大部分是临界区，在codis和协程上线后出现了一个问题，<u>由于每个玩家是一个单独的协程，在多线程处理一块共享数据的时候，不同的协程进入同一个函数进行加锁操作，因为函数的后续进行了redis的异步访问，这些协程可能在没有解锁的情况下被挂起，如果这个函数的访问次数增多，那么其他需要处理共享数据的线程就会等待，造成某些逻辑的卡死。</u>由于第一时间就想到了该问题的解决办法，所以并没有继续深入研究导致程序假死的具体步骤。<br><br></p>
+<p>记录一下出问题的函数以及解决后的函数:</p>
+<pre><code><span class="comment">///获得角色的摘要信息指针</span>
+TRoleData * CRoleDataService::FindRoleData(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span> &amp; _roleid)
+{
+    SVR_BASE::<span class="function">CSVRCriticalEnter <span class="title">t_autolock</span><span class="params">(&amp;m_lock)</span></span>;
+    RoleMap::const_iterator t_it = m_mapRoleByRoleId.find(_roleid);
+    <span class="keyword">if</span>(t_it == m_mapRoleByRoleId.end())
+    {
+        SVR_BASE::<span class="keyword">coroutine_t</span> t_coroutine = SVR_BASE::co_current();
+        MASSERT( t_coroutine!=<span class="literal">NULL</span> );
+        TRoleData *    t_ptrRole = <span class="keyword">new</span> TRoleData();
+        t_ptrRole-&gt;strRoleId = <span class="string">""</span>;
+        <span class="keyword">if</span> ( <span class="literal">true</span> == CRoleDataService::Instance._redis_command_cb( REDIS_CLT::HGETALL(ROLE_SUMMARY::_SUMMARY_ROLE_+_roleid), 
+            std_tr1::bind(_co_rolesummary_callback, t_coroutine, t_ptrRole, std_tr1::_1 )))
+        {
+            SVR_BASE::co_wait_io_complete();
+        }
+        <span class="keyword">if</span>(<span class="string">""</span> != t_ptrRole-&gt;strRoleId)
+        {
+            m_mapRoleByRoleId.insert(<span class="built_in">std</span>::make_pair(_roleid,t_ptrRole));
+        }
+        <span class="keyword">else</span>
+        {
+            <span class="keyword">delete</span> t_ptrRole;
+            t_ptrRole = <span class="literal">NULL</span>;
+        }
+        <span class="keyword">return</span> t_ptrRole;
+    }
+    <span class="keyword">else</span>
+    {
+        <span class="keyword">return</span> t_it-&gt;second;
+    }
+}
+</code></pre><p>上面的函数使用了我们项目中自动释放的临界区对象SVR_BASE::CSVRCriticalEnter来对m_mapRoleByRoleId数据进行加锁，这个对象的生命周期到函数退出为止，但是 SVR_BASE::co_wait_io_complete() 会把该协程挂起，如果这个协程不再被激活，那么锁将永远不会被解开，其他线程中用到这个锁的地方就会一直处于等待状态。修改后的代码：</p>
+<pre><code><span class="comment">///获得角色的摘要信息指针</span>
+TRoleData * CRoleDataService::FindRoleData(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span> &amp; _roleid)
+{
+    m_lock.lock();
+    RoleMap::const_iterator t_it = m_mapRoleByRoleId.find(_roleid);
+    <span class="keyword">if</span>(t_it != m_mapRoleByRoleId.end())
+    {
+        m_lock.unlock();
+        <span class="keyword">return</span> t_it-&gt;second;
+    }
+    m_lock.unlock();
+    SVR_BASE::<span class="keyword">coroutine_t</span> t_coroutine = SVR_BASE::co_current();
+    MASSERT( t_coroutine!=<span class="literal">NULL</span> );
+    TRoleData *    t_ptrRole = <span class="keyword">new</span> TRoleData();
+    t_ptrRole-&gt;strRoleId = <span class="string">""</span>;
+    <span class="keyword">if</span> ( <span class="literal">true</span> == CRoleDataService::Instance._redis_command_cb( REDIS_CLT::HGETALL(ROLE_SUMMARY::_SUMMARY_ROLE_+_roleid), 
+        std_tr1::bind(_co_rolesummary_callback, t_coroutine, t_ptrRole, std_tr1::_1 )))
+    {
+        SVR_BASE::co_wait_io_complete();
+    }
+    <span class="keyword">if</span>(<span class="string">""</span> != t_ptrRole-&gt;strRoleId)
+    {
+        m_lock.lock();
+        t_it = m_mapRoleByRoleId.find(_roleid);
+        <span class="keyword">if</span> ( t_it!= m_mapRoleByRoleId.end() )
+        {
+            <span class="keyword">delete</span> t_it-&gt;second;
+            m_mapRoleByRoleId.erase(t_it);
+        }
+        m_mapRoleByRoleId.insert(<span class="built_in">std</span>::make_pair(_roleid,t_ptrRole));
+        m_lock.unlock();
+    }
+    <span class="keyword">else</span>
+    {
+        <span class="keyword">delete</span> t_ptrRole;
+        t_ptrRole = <span class="literal">NULL</span>;
+    }
+    <span class="keyword">return</span> t_ptrRole;
+}
+</code></pre><p>修改后的代码只在操作m_mapRoleByRoleId这块共享数据的时候进行了加解锁操作，保证了锁不会被协程挂起。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2018-05-09T04:00:00.000Z"><a href="/2018/05/09/codis_3/">2018-05-09</a></time>
       
       
@@ -3595,7 +3702,7 @@ GLint main(GLint argc,char** argv)
   <h3 class="title">标签</h3>
   <ul class="entry">
   
-    <li><a href="/tags/C/">C++</a><small>16</small></li>
+    <li><a href="/tags/C/">C++</a><small>17</small></li>
   
     <li><a href="/tags/DB/">DB</a><small>2</small></li>
   
@@ -3603,13 +3710,13 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
-    <li><a href="/tags/Linux/">Linux</a><small>15</small></li>
+    <li><a href="/tags/Linux/">Linux</a><small>16</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>26</small></li>
+    <li><a href="/tags/博客/">博客</a><small>27</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>23</small></li>
+    <li><a href="/tags/技术/">技术</a><small>24</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   
