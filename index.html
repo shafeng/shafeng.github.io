@@ -993,6 +993,42 @@ secure-file-priv=
     <header>
       
         <div class="icon"></div>
+        <time datetime="2017-05-20T07:55:00.000Z"><a href="/2017/05/20/linux程序发布/">2017-05-20</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2017/05/20/linux程序发布/">高版本gcc编译的程序在低版本gcc机器上运行</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>#关于linux的程序发布</p>
+<p>我们项目的服务器一直使用centos6.5，主要原因是当时各种云服务器厂商的主流稳定centos版本就是6.5，但是这个版本的系统自带的gcc版本是4.4.7，gcc版本过低导致很多gcc新版本的功能无法使用，比如c++11还有之前我介绍过的ASan。 一开始我们自己做了妥协，把编译机从centos7降到了centos6.5，很多c++11的代码也做了修改。  编译机和线上环境系统版本的统一保证了程序的稳定性。 </p>
+<p>但是随着项目的发展，一些gcc的新功能也确实特别诱人，为了升级gcc研究了一下这个问题。 其实只要把编译机上的libstdc++.so文件与我们自己的程序一起发布就可以了，编译机上可以升级gcc到最新版本，程序编译发布时将升级过的libstdc++.so文件一同发布，让我们自己的程序在运行的时候动态链接编译机上的libstdc++.so(使用g++的-Wl,-rpath命令)</p>
+<p>好像是gcc的某一个版本之前libstc++.so是依赖于libc.so的，也就是说当时如果只发布libstc++.so可能程序也跑不起来，之后某个版本又解除了这个依赖，不知道我说的对不对。。。记录一下。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2017-05-10T07:55:00.000Z"><a href="/2017/05/10/asan/">2017-05-10</a></time>
       
       
@@ -3496,13 +3532,13 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/HTTP/">HTTP</a><small>1</small></li>
   
-    <li><a href="/tags/Linux/">Linux</a><small>14</small></li>
+    <li><a href="/tags/Linux/">Linux</a><small>15</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>25</small></li>
+    <li><a href="/tags/博客/">博客</a><small>26</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>22</small></li>
+    <li><a href="/tags/技术/">技术</a><small>23</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   
