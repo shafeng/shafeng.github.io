@@ -62,7 +62,52 @@
     </header>
     <div class="entry">
       
-        <h1 id="tcmalloc">tcmalloc</h1><p>由于项目引入了协程，之前使用的内存泄漏和越界检测工具asan就不能用了，asan官方说对协程的支持不够。 所以只能换一个工具，tcmalloc是一个不错的替代品，同时tcmalloc还提供了内存管理的功能</p>
+        <h1 id="tcmalloc">tcmalloc</h1><p>由于项目引入了协程，之前使用的内存泄漏和越界检测工具asan就不能用了，asan官方说对协程的支持不够。 所以只能换一个工具，tcmalloc是一个不错的替代品，同时tcmalloc还提供了内存管理的功能，在一个2.8GHz 4核的机器上普通malloc和free一次耗时300ns，tcmalloc同样的功能只需要50ns（数据来源于网络）。  记录一个检测内存泄漏的例子:</p>
+<pre><code><span class="preprocessor">#test.cpp</span>
+
+<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span>
+<span class="function"><span class="keyword">int</span> <span class="title">test</span><span class="params">()</span>
+</span>{
+    <span class="keyword">char</span>* p = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="number">100</span>];
+    <span class="keyword">return</span> <span class="number">1</span>;
+}
+
+<span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span>
+</span>{
+    test();
+    <span class="keyword">return</span> <span class="number">1</span>;
+}
+
+
+g++ -g -o test test.cpp
+
+<span class="preprocessor">#设置这三个环境变量可以让程序不用重新编译</span>
+
+<span class="keyword">export</span> HEAPCHECK=normal
+<span class="keyword">export</span> LD_PRELOAD=./commonlib/libtcmalloc.so
+<span class="keyword">export</span> PPROF_PATH=./share_bin/pprof
+
+./test
+
+WARNING: Perftools heap leak checker is active -- Performance may suffer
+Have memory regions w/o callers: might report <span class="literal">false</span> leaks
+Leak check _main_ detected leaks of <span class="number">100</span> bytes in <span class="number">1</span> objects
+The <span class="number">1</span> largest leaks:
+Using local file ./test.
+Leak of <span class="number">100</span> bytes in <span class="number">1</span> objects allocated from:
+        @ <span class="number">40074</span>a test
+        @ <span class="number">40075</span>e main
+        @ <span class="number">3</span>a5341ed5d __libc_start_main
+        @ <span class="number">4005f</span>9 _start
+
+
+If the preceding <span class="built_in">stack</span> traces are not enough to find the leaks, <span class="keyword">try</span> running THIS shell command:
+
+pprof ./test <span class="string">"/tmp/test.17307._main_-end.heap"</span> --inuse_objects --lines --heapcheck  --edgefraction=<span class="number">1e-10</span> --nodefraction=<span class="number">1e-10</span> --gv
+
+If you are still puzzled about why the leaks are there, <span class="keyword">try</span> rerunning <span class="keyword">this</span> program with HEAP_CHECK_TEST_POINTER_ALIGNMENT=<span class="number">1</span> and/or with HEAP_CHECK_MAX_POINTER_OFFSET=-<span class="number">1</span>
+If the leak report occurs in a small fraction of runs, <span class="keyword">try</span> running with TCMALLOC_MAX_
+</code></pre><p>可以看到检测出了内存泄漏的堆栈信息，以及最上一层存在泄漏的函数test()</p>
 
       
     </div>
