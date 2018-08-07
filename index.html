@@ -53,25 +53,25 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2018-06-22T06:00:00.000Z"><a href="/2018/06/22/跟某个云厂商扯皮/">2018-06-22</a></time>
+        <time datetime="2018-06-22T06:00:00.000Z"><a href="/2018/06/22/云厂商扯皮/">2018-06-22</a></time>
       
       
   
-    <h1 class="title"><a href="/2018/06/22/跟某个云厂商扯皮/">跟某个云厂商的长期扯皮...</a></h1>
+    <h1 class="title"><a href="/2018/06/22/云厂商扯皮/">跟某个云厂商的长期扯皮...</a></h1>
   
 
     </header>
     <div class="entry">
       
         <h1 id="云服务器效率急降">云服务器效率急降</h1><p>从2017年6月开始，云服务器出现了不同程度的效率急降，通常是突然cpu能力和IO效率在几秒内降低5成，表现到程序上就是游戏服务器程序突然cpu100%，非常可怕，找到云厂商反应问题，得到的答复是他们没问题，要我自己检查自己的程序。每次出问题通过sar命令观察系统的效率，都可以看到明显的问题。这个问题断断续续在一年的时间中出现了不下10次，最近该厂商终于承认是自己的问题，他们的解释是同一台物理机上其他虚拟机抢占了我们虚拟机的资源，导致我们的云服务器效率下降。 记录一下几个关键sar命令，可以清楚的看到系统的各种统计信息，这些信息可以很清楚的表明，服务器的效率问题跟CP的服务器程序没有关系。</p>
-<p><br><br>    sar -B<br><img src="/2018/06/22/跟某个云厂商扯皮/跟某个云厂商的长期扯皮/1.png" alt="sar -B"><br>    pgpgin/s：每s从磁盘换入的页的大小（KB）<br>    pgpgout/s：每s换出到磁盘的页的大小（KB）<br>    fault/s：每s发生的缺页错误的次数，包括minor fault和major fault。<br>    majflt/s：每s发生的major fault的次数，major fault会导致从磁盘载入内存页（即使用了swap分区）。<br>    pgfree/s：每s放入空闲列表中的页的个数。<br>    pgscank/s：每s被kswapd后台进程扫描的页的个数。<br>    pgscand/s：每s直接被扫描的页的个数。<br>    pgsteal/s：为了满足内存要求，每s从cache（pagecache和swapcache）回收的页的个数。<br>    %vmeff：等于pgsteal  /  pgscan，用于计算页回收（page reclaim）的效率。</p>
-<p><br><br>    sar -q<br><img src="/2018/06/22/跟某个云厂商扯皮/跟某个云厂商的长期扯皮/2.png" alt="sar -q"></p>
+<p><br><br>    sar -B<br><img src="/2018/06/22/云厂商扯皮/云厂商的长期扯皮/1.png" alt="sar -B"><br>    pgpgin/s：每s从磁盘换入的页的大小（KB）<br>    pgpgout/s：每s换出到磁盘的页的大小（KB）<br>    fault/s：每s发生的缺页错误的次数，包括minor fault和major fault。<br>    majflt/s：每s发生的major fault的次数，major fault会导致从磁盘载入内存页（即使用了swap分区）。<br>    pgfree/s：每s放入空闲列表中的页的个数。<br>    pgscank/s：每s被kswapd后台进程扫描的页的个数。<br>    pgscand/s：每s直接被扫描的页的个数。<br>    pgsteal/s：为了满足内存要求，每s从cache（pagecache和swapcache）回收的页的个数。<br>    %vmeff：等于pgsteal  /  pgscan，用于计算页回收（page reclaim）的效率。</p>
+<p><br><br>    sar -q<br><img src="/2018/06/22/云厂商扯皮/云厂商的长期扯皮/2.png" alt="sar -q"></p>
 <pre><code><span class="attribute">runq-sz</span>:处于运行或就绪的进程数量
 <span class="attribute">plist-sz</span>:现在进程的总数(包括线程).
 <span class="attribute">ldavg-1</span>:最近一分钟的负载.
 <span class="attribute">ldavg-5</span>:最近五分钟的负载.
 <span class="attribute">ldavg-15</span>:最近十分钟的负载.
-</code></pre><p><br><br>    sar -n DEV<br><img src="/2018/06/22/跟某个云厂商扯皮/跟某个云厂商的长期扯皮/3.png" alt="sar -n DEV"><br>    IFACE：LAN接口<br>    rxpck/s：每秒钟接收的数据包<br>    txpck/s：每秒钟发送的数据包<br>    rxbyt/s：每秒钟接收的字节数<br>    txbyt/s：每秒钟发送的字节数<br>    rxcmp/s：每秒钟接收的压缩数据包<br>    txcmp/s：每秒钟发送的压缩数据包<br>    rxmcst/s：每秒钟接收的多播数据包<br><br></p>
+</code></pre><p><br><br>    sar -n DEV<br><img src="/2018/06/22/云厂商扯皮/云厂商的长期扯皮/3.png" alt="sar -n DEV"><br>    IFACE：LAN接口<br>    rxpck/s：每秒钟接收的数据包<br>    txpck/s：每秒钟发送的数据包<br>    rxbyt/s：每秒钟接收的字节数<br>    txbyt/s：每秒钟发送的字节数<br>    rxcmp/s：每秒钟接收的压缩数据包<br>    txcmp/s：每秒钟发送的压缩数据包<br>    rxmcst/s：每秒钟接收的多播数据包<br><br></p>
 
       
     </div>
