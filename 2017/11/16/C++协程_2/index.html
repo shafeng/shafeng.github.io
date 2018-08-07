@@ -64,7 +64,6 @@
       
         <h1 id="ucontext协程的封装">ucontext协程的封装</h1><p>前面介绍了unix自带的ucontext相关函数，现在记录一下我们实际项目中的使用。</p>
 <p>我们的项目中，每个玩家在登陆时创建玩家对象<code>CHZUser</code>，同时通过<code>SVR_BASE::co_create</code>函数创建一个协程上下文对象（后面简称协程对象），协程对象的执行函数是该玩家的消息循环函数<code>CHZUser::message_loop</code>,</p>
-<h2 id="总结">总结</h2><p>以上就是ucontext的全部内容，非常简洁。我们项目中使用的就是ucontext，后面再记录一下项目中的实际使用情况。</p>
 <pre><code><span class="class"><span class="keyword">enum</span> <span class="title">CoroutineStatus_t</span></span>
 {
     emCoroutine_closed    =<span class="number">0</span>,    <span class="regexp">//</span><span class="regexp">/&lt; 关闭的
