@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>内存池tcmalloc的使用 | Shafeng`s blog</title>
+  <title>跟某个云厂商的长期扯皮... | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="内存池tcmalloc的使用"/>
+  <meta property="og:title" content="跟某个云厂商的长期扯皮..."/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,62 +52,25 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2017-12-01T04:00:00.000Z"><a href="/2017/12/01/TCMalloc/">2017-12-01</a></time>
+        <time datetime="2018-06-22T06:00:00.000Z"><a href="/2018/06/22/跟某个云厂商扯皮/">2018-06-22</a></time>
       
       
   
-    <h1 class="title">内存池tcmalloc的使用</h1>
+    <h1 class="title">跟某个云厂商的长期扯皮...</h1>
   
 
     </header>
     <div class="entry">
       
-        <h1 id="tcmalloc">tcmalloc</h1><p>由于项目引入了协程，之前使用的内存泄漏和越界检测工具asan就不能用了，asan官方说对协程的支持不够。 所以只能换一个工具，tcmalloc是一个不错的替代品，同时tcmalloc还提供了内存管理的功能，在一个2.8GHz 4核的机器上普通malloc和free一次耗时300ns，tcmalloc同样的功能只需要50ns（数据来源于网络）。  记录一个检测内存泄漏的例子:</p>
-<pre><code><span class="preprocessor">#test.cpp</span>
-
-<span class="preprocessor">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span>
-<span class="function"><span class="keyword">int</span> <span class="title">test</span><span class="params">()</span>
-</span>{
-    <span class="keyword">char</span>* p = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="number">100</span>];
-    <span class="keyword">return</span> <span class="number">1</span>;
-}
-
-<span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span>
-</span>{
-    test();
-    <span class="keyword">return</span> <span class="number">1</span>;
-}
-
-
-g++ -g -o test test.cpp
-
-<span class="preprocessor">#设置这三个环境变量可以让程序不用重新编译</span>
-
-<span class="keyword">export</span> HEAPCHECK=normal
-<span class="keyword">export</span> LD_PRELOAD=./commonlib/libtcmalloc.so
-<span class="keyword">export</span> PPROF_PATH=./share_bin/pprof
-
-./test
-
-WARNING: Perftools heap leak checker is active -- Performance may suffer
-Have memory regions w/o callers: might report <span class="literal">false</span> leaks
-Leak check _main_ detected leaks of <span class="number">100</span> bytes in <span class="number">1</span> objects
-The <span class="number">1</span> largest leaks:
-Using local file ./test.
-Leak of <span class="number">100</span> bytes in <span class="number">1</span> objects allocated from:
-        @ <span class="number">40074</span>a test
-        @ <span class="number">40075</span>e main
-        @ <span class="number">3</span>a5341ed5d __libc_start_main
-        @ <span class="number">4005f</span>9 _start
-
-
-If the preceding <span class="built_in">stack</span> traces are not enough to find the leaks, <span class="keyword">try</span> running THIS shell command:
-
-pprof ./test <span class="string">"/tmp/test.17307._main_-end.heap"</span> --inuse_objects --lines --heapcheck  --edgefraction=<span class="number">1e-10</span> --nodefraction=<span class="number">1e-10</span> --gv
-
-If you are still puzzled about why the leaks are there, <span class="keyword">try</span> rerunning <span class="keyword">this</span> program with HEAP_CHECK_TEST_POINTER_ALIGNMENT=<span class="number">1</span> and/or with HEAP_CHECK_MAX_POINTER_OFFSET=-<span class="number">1</span>
-If the leak report occurs in a small fraction of runs, <span class="keyword">try</span> running with TCMALLOC_MAX_
-</code></pre><p>可以看到检测出了内存泄漏的堆栈信息，以及最上一层存在泄漏的函数test()</p>
+        <h1 id="云服务器效率急降">云服务器效率急降</h1><p>从2017年6月开始，云服务器出现了不同程度的效率急降，通常是突然cpu能力和IO效率在几秒内降低5成，表现到程序上就是游戏服务器程序突然cpu100%，非常可怕，找到云厂商反应问题，得到的答复是他们没问题，要我自己检查自己的程序。每次出问题通过sar命令观察系统的效率，都可以看到明显的问题。这个问题断断续续在一年的时间中出现了不下10次，最近该厂商终于承认是自己的问题，他们的解释是同一台物理机上其他虚拟机抢占了我们虚拟机的资源，导致我们的云服务器效率下降。 记录一下几个关键sar命令，可以清楚的看到系统的各种统计信息，这些信息可以很清楚的表明，服务器的效率问题跟CP的服务器程序没有关系。</p>
+<p><br><br>    sar -B<br><img src="/2018/06/22/跟某个云厂商扯皮/跟某个云厂商的长期扯皮/1.png" alt="sar -B"><br>    pgpgin/s：每s从磁盘换入的页的大小（KB）<br>    pgpgout/s：每s换出到磁盘的页的大小（KB）<br>    fault/s：每s发生的缺页错误的次数，包括minor fault和major fault。<br>    majflt/s：每s发生的major fault的次数，major fault会导致从磁盘载入内存页（即使用了swap分区）。<br>    pgfree/s：每s放入空闲列表中的页的个数。<br>    pgscank/s：每s被kswapd后台进程扫描的页的个数。<br>    pgscand/s：每s直接被扫描的页的个数。<br>    pgsteal/s：为了满足内存要求，每s从cache（pagecache和swapcache）回收的页的个数。<br>    %vmeff：等于pgsteal  /  pgscan，用于计算页回收（page reclaim）的效率。</p>
+<p><br><br>    sar -q<br><img src="/2018/06/22/跟某个云厂商扯皮/跟某个云厂商的长期扯皮/2.png" alt="sar -q"></p>
+<pre><code><span class="attribute">runq-sz</span>:处于运行或就绪的进程数量
+<span class="attribute">plist-sz</span>:现在进程的总数(包括线程).
+<span class="attribute">ldavg-1</span>:最近一分钟的负载.
+<span class="attribute">ldavg-5</span>:最近五分钟的负载.
+<span class="attribute">ldavg-15</span>:最近十分钟的负载.
+</code></pre><p><br><br>    sar -n DEV<br><img src="/2018/06/22/跟某个云厂商扯皮/跟某个云厂商的长期扯皮/3.png" alt="sar -n DEV"><br>    IFACE：LAN接口<br>    rxpck/s：每秒钟接收的数据包<br>    txpck/s：每秒钟发送的数据包<br>    rxbyt/s：每秒钟接收的字节数<br>    txbyt/s：每秒钟发送的字节数<br>    rxcmp/s：每秒钟接收的压缩数据包<br>    txcmp/s：每秒钟发送的压缩数据包<br>    rxmcst/s：每秒钟接收的多播数据包<br><br></p>
 
       
     </div>
@@ -117,7 +80,7 @@ If the leak report occurs in a small fraction of runs, <span class="keyword">try
         
   
   <div class="tags">
-    <a href="/tags/C/">C++</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
