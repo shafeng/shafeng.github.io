@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>mysql 优化配置和一些参数的解释 | Shafeng`s blog</title>
+  <title>记一次使用mysqlbinlog恢复数据库 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="mysql 优化配置和一些参数的解释"/>
+  <meta property="og:title" content="记一次使用mysqlbinlog恢复数据库"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,54 +52,49 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2017-06-10T04:00:00.000Z"><a href="/2017/06/10/mysql/">2017-06-10</a></time>
+        <time datetime="2017-03-21T04:00:00.000Z"><a href="/2017/03/21/mysql_binlog/">2017-03-21</a></time>
       
       
   
-    <h1 class="title">mysql 优化配置和一些参数的解释</h1>
+    <h1 class="title">记一次使用mysqlbinlog恢复数据库</h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="Mysql的一些性能优化记录">Mysql的一些性能优化记录</h2><p>项目上经过合服等操作,单服的玩家数量一度超过500W,一些排行榜数据和玩家摘要数据在程序启动时就要从数据库中加载,数据量的增大也延长了服务器程序的启动时间,一些必要的优化就在所难免了.贴一下数据的配置.做一下记录</p>
-<pre><code>[client]
-<span class="constant">socket</span> = /tmp/mysql.sock
-
-
-[mysqld_multi]
-<span class="constant">log</span>        = /data/mysql_db/mysqld_multi.log
-<span class="constant">mysqld</span>     = /usr/bin/mysqld_safe
-<span class="constant">mysqladmin</span> = /usr/bin/mysqladmin
-<span class="constant">user</span>       = shutdown_user
-
-<span class="comment">###########################################################################################</span>
-[mysqld4306]
-<span class="constant">port</span>       = 4306
-<span class="constant">socket</span>     = /tmp/mysql_4306.sock
-pid-file   = /tmp/mysql_4306.pid
-<span class="constant">datadir</span>    = /data/mysql_db/4306
-<span class="constant">default_storage_engine</span> = InnoDB
-<span class="constant">sql_mode</span>=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
-skip-name-resolve
-<span class="constant">max_connections</span> = 1000
-<span class="constant">innodb_flush_log_at_trx_commit</span> = 2
-<span class="constant">innodb_flush_log_at_timeout</span>     =1
-<span class="constant">innodb_buffer_pool_size</span> = 24080M
-<span class="constant">innodb_log_buffer_size</span> = 8M
-<span class="constant">innodb_log_file_size</span> = 256M
-log-bin=/data/mysql_binlog/4306/mysql-bin
-<span class="constant">binlog_format</span>=MIXED
-<span class="constant">binlog_cache_size</span> = 1M
-<span class="constant">max_binlog_size</span>=512M
-log_warnings
-slow_query_log
-<span class="constant">long_query_time</span> = 2
-server-id = 1
-<span class="constant">expire_logs_days</span> = 5
-secure-file-priv=
-<span class="constant">tmpdir</span>=/data/mysql_tmp
-</code></pre><p>innodb_buffer_pool_size 这个选项调大可以增加innodb的内存大小,减少io操作<br>expire_logs_days 这个选项可以指定binlog保存的天数,binlog占用硬盘空间特别大,但是binlog又是恢复数据库时最宝贵的log,所以如何权衡这个问题还得结合自己项目的需要<br>secure-file-priv= 这个选项可以让其他用户写入数据,项目在合服时无法写入数据,加入这个配置可以降低数据库的安全性检查<br>tmpdir=/data/mysql_tmp 这个选项可以指定mysql在运行时使用的硬盘空间地址,默认的地址是在系统盘,而一般系统盘的空间较小,把目录指定到空间较大的目录可以有效提高数据库的io效率</p>
+        <h1 id="mysqlbinlog">mysqlbinlog</h1><p>记得项目还没上线的时候因为一次误操作清空了数据库，不是非常要命但是如果手动恢复的话还是很麻烦的，所以就用了mysql的binlog机制进行了数据库的恢复，因为没有上线，binlog并不大，也没有删除过binlog，所以很容易就恢复了，不过没有做记录，前几天另外一个项目组的数据库数据也因为误操作被清空了，正好又实践了一次…这次把mysqlbinlog的使用记录下来。<br><br><br>首先mysql启动前要配置一些字段才能使binlog生效。</p>
+<pre><code>vi /usr/<span class="keyword">local</span>/mysql/etc/<span class="keyword">my</span>.cnf
+</code></pre><p><br></p>
+<p>配置文件中配置如下的binlog相关配置</p>
+<pre><code><span class="built_in">log</span>-bin=/data/mysql_binlog/<span class="number">4306</span>/mysql-bin
+binlog_format=MIXED
+binlog_cache_size = <span class="number">1</span>M
+max_binlog_size=<span class="number">512</span>M
+expire_logs_days = <span class="number">5</span>  <span class="preprocessor">#我这里只记录了五天，因为binlog特别大，容易将硬盘占满，需要定时清理，但是如果binlog不全是没法恢复数据库的。</span>
+</code></pre><p>binlog中保存了修改数据库的所有语句（增删改查中，除了selec语句的其他所有语句），完全按照顺序写入binlog，如果数据库不幸被删了，那么从binlog的第一条记录开始恢复就会恢复binlog保存的所有数据。<br>使用binlog恢复数据的命令：</p>
+<pre><code>mysqlbinlog mysql-bin<span class="number">.000001</span> --start-position=<span class="number">4</span> --stop-position=<span class="number">7128197</span> -d db_launcher_hz | mysql -uroot -h <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> -P <span class="number">4306</span> -D db_launcher_hz
+</code></pre><p>命令中指定了要恢复的binlog文件 <code>mysql-bin.000001</code>,开始位置和结束位置，要恢复的数据库名字，用户名密码等等。开始位置和结束位置可以通过查看binlog内容来确定，查看binlog内容的命令：</p>
+<pre><code>mysqlbinlog mysql-bin<span class="number">.000001</span>
+</code></pre><p>会输出binlog的内容：</p>
+<pre><code>.......
+<span class="operator"><span class="keyword">SET</span> <span class="keyword">TIMESTAMP</span>=<span class="number">1519733350</span><span class="comment">/*!*/</span>;</span>
+<span class="operator"><span class="keyword">BEGIN</span>
+<span class="comment">/*!*/</span>;</span>
+# at 261731
+#180227 20:09:10 server id 1  end_log_pos 262082 CRC32 0x69ff7fd5       Query   thread_id=31923 exec_time=0     error_code=0
+<span class="operator"><span class="keyword">SET</span> <span class="keyword">TIMESTAMP</span>=<span class="number">1519733350</span><span class="comment">/*!*/</span>;</span>
+<span class="operator"><span class="keyword">UPDATE</span> tbl_activity <span class="keyword">SET</span> fld_channel=<span class="string">''</span>, fld_status=<span class="string">'1'</span>, fld_show_status=<span class="string">'1'</span>, fld_start_time=<span class="string">'2014-12-31 16:00:00'</span>, fld_stop_time=<span class="string">'2015-01-01 16:00:00'</span>, fld_show_start_time=<span class="string">'2014-12-31 16:00:00'</span>, fld_show_stop_time=<span class="string">'2015-01-01 16:00:00'</span> <span class="keyword">WHERE</span> fld_id=<span class="string">'7393'</span>
+<span class="comment">/*!*/</span>;</span>
+# at 262082
+#180227 20:09:10 server id 1  end_log_pos 262184 CRC32 0x243a0c9d       Query   thread_id=31923 exec_time=0     error_code=0
+<span class="operator"><span class="keyword">SET</span> <span class="keyword">TIMESTAMP</span>=<span class="number">1519733350</span><span class="comment">/*!*/</span>;</span>
+<span class="operator"><span class="keyword">COMMIT</span>
+<span class="comment">/*!*/</span>;</span>
+# at 262184
+#180227 20:09:10 server id 1  end_log_pos 262285 CRC32 0xad2078ed       Query   thread_id=31923 exec_time=0     error_code=0
+.......
+</code></pre><p>我们可以把binlog的内容输出到文本中寻找想要恢复的的起止位置。</p>
+<p>两次通过binlog恢复数据库内容的操作都是在项目早期，数据量并不多，binlog没有删除过，所以恢复起来并没有什么压力，但是binlog占用的硬盘空间非常大，如何管理binlog以保证数据库数据的安全性是之后需要考虑的一个问题。</p>
 
       
     </div>
@@ -109,7 +104,7 @@ secure-file-priv=
         
   
   <div class="tags">
-    <a href="/tags/DB/">DB</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/MySql/">MySql</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
