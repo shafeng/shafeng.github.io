@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>codis(下) | Shafeng`s blog</title>
+  <title>记一次线上程序出现mysql死锁 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="codis(下)"/>
+  <meta property="og:title" content="记一次线上程序出现mysql死锁"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,47 +52,23 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2018-05-09T04:00:00.000Z"><a href="/2018/05/09/codis_3/">2018-05-09</a></time>
+        <time datetime="2018-02-03T04:00:00.000Z"><a href="/2018/02/03/mysql_deadlock/">2018-02-03</a></time>
       
       
   
-    <h1 class="title">codis(下)</h1>
+    <h1 class="title">记一次线上程序出现mysql死锁</h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="Codis_在程序中的使用">Codis 在程序中的使用</h2><p>前两篇文章记录了codis的安装和启动，以及服务器集群的架设，这一篇记录一下codis在工程中的使用情况。</p>
-<h3 id="python测试程序">python测试程序</h3><p>用python连接codis服务器的测试程序，测试了一些简单的命令和简单排行榜。连接的ip地址是codis组件中proxy的地址，proxy接受的命令并不是全部是redis命令，具体情况参考官方文档</p>
-<p>（<a href="https://github.com/CodisLabs/codis/blob/release3.2/doc/unsupported_cmds.md）" target="_blank" rel="external">https://github.com/CodisLabs/codis/blob/release3.2/doc/unsupported_cmds.md）</a></p>
-<hr>
-<pre><code>import redis   <span class="preprocessor"># 导入redis模块，通过python操作redis 也可以直接在redis主机的服务端操作缓存数据库</span>
-
-r = redis.Redis(host=<span class="string">'127.0.0.1'</span>, port=<span class="number">6379</span>, decode_responses=<span class="literal">True</span>)   <span class="preprocessor"># host是redis主机，需要redis服务端和客户端都启动 redis默认端口是6379</span>
-
-<span class="preprocessor">#r.set(<span class="string">'name2'</span>, <span class="string">'warship3'</span>)  # key是<span class="string">"foo"</span> value是<span class="string">"bar"</span> 将键值对存入redis缓存</span>
-<span class="preprocessor"># print(r[<span class="string">'name2'</span>])</span>
-<span class="preprocessor"># print(r.get(<span class="string">'name2'</span>))  # 取出键name对应的值</span>
-<span class="preprocessor"># print(type(r.get(<span class="string">'name2'</span>)))</span>
-
-<span class="preprocessor">#r.hmset(<span class="string">"myhash"</span>,{<span class="string">"field1"</span>:<span class="string">"Hello"</span>,<span class="string">"field2"</span>:<span class="string">"World"</span>}) </span>
-<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,5,111)</span>
-<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,2,112)</span>
-<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,30,113)</span>
-<span class="preprocessor"># r.zadd(<span class="string">"499-rank-100"</span>,10,114)</span>
-
-<span class="preprocessor">#ZRANGE myzset 0 -1 WITHSCORES</span>
-
-<span class="preprocessor"># print(type(r.zrange(<span class="string">"499-rank-100"</span>,0,3,withscores=True)))</span>
-<span class="preprocessor"># print(r.zrange(<span class="string">"499-rank-100"</span>,0,3,withscores=True))</span>
-<span class="preprocessor"># print(r.zrevrange(<span class="string">"499-rank-100"</span>,0,3,withscores=True))</span>
-<span class="preprocessor"># print(r.zrevrank(<span class="string">"499-rank-100"</span>,10))</span>
-
-print(r.zrevrange(<span class="string">"1014-rank-4"</span>,<span class="number">0</span>,<span class="number">100</span>,withscores=<span class="literal">True</span>))
-print(r.zrevrank(<span class="string">"1014-rank-4"</span>,<span class="number">10</span>))
-</code></pre><hr>
-<h3 id="项目中的实际使用">项目中的实际使用</h3><p>首先我们的项目在没有引入codis之前，所有的数据全部存储在mysql中，玩家摘要和排行榜这些请求量比较大的数据都是在程序初始化的时候全部加载到内存中的，引入codis后，需要把这些数据全部在codis中做一份拷贝（用python做这类工作非常效率，因为我们的mysql数据中每一张数据表都有一个modify_time字段，标识了该条数据的上一次修改时间，所以只要根据这个字段就可以在不停服的情况下做前期的数据拷贝，停服后只需要同步最后一点时间内修改的数据就好了），工程中使用这些数据的时候需要把mysql和codis中的数据同步更新，由于mysql的数据更可信，所以在mysql和redis的数据出现不匹配的情况下，选择mysql中的数据，而大量对摘要和排行榜数据的请求全部交给codis处理，这样不仅分离了项目主程序和摘要排行榜数据，也加快了读取这些数据的速度。</p>
-<p>上线后codis的表现比较好，没有出现过什么问题，如果各个group的内存使用不太平均，还可以使用codis网页工具提供的功能对slot进行动态转移，把内存量使用大的group中的slot分配到其它group中。</p>
+        <h1 id="线上程序出现死锁">线上程序出现死锁</h1><p>过年期间的某一天，线上程序突然宕机一次，查看core文件发现是出现了数据库死锁，项目上线这么久还是第一次碰到死锁宕机的情况，我们的项目本身并没有使用事务，为什么会出现死锁我也很懵。通过命令在数据库上查看出现死锁的日志：</p>
+<pre><code>mysql   -h <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> -P <span class="number">4306</span> -u root -p --execute=<span class="string">"show engine innodb status \G"</span> &gt; ./mysql.<span class="built_in">log</span>
+</code></pre><p>查看mysql.log的内容发现有死锁内容：</p>
+<pre><code>SQL ERROR:Deadlock found when trying to get <span class="operator"><span class="keyword">lock</span>;</span> try restarting transaction
+SQL:<span class="operator"><span class="keyword">UPDATE</span> tbl_fleet_science <span class="keyword">SET</span> fld_level=<span class="string">'8'</span>, fld_level_exp=<span class="string">'1052182'</span> <span class="keyword">WHERE</span> fld_science_id=<span class="string">'1'</span> <span class="keyword">AND</span> fld_fleet_id=<span class="string">'0006-00-20160828-001006-0000008'</span>;</span>
+</code></pre><p>一共有两个地方对两行这个表中的数据进行了操作，互相等待锁释放导致死锁，仔细查了一下代码中操作这个表的语句，使用的条件顺序是<code>WHERE fld_science_id=&#39;1&#39; AND fld_fleet_id=&#39;0006-00-20160828-001006-0000008&#39;</code>，先匹配<code>fld_science_id</code>后匹配<code>fld_fleet_id</code>,但是<code>tbl_fleet_science</code>表结构中有一个索引，索引的顺序是<code>(tbl_fleet_science,fld_fleet_id)</code>,这个顺序和代码中的条件顺序是相反的。  查询了一些资料并没有找到权威的解释，没有明确证据表明这种相反的顺序会导致死锁，但是能找到的唯一有疑点的地方只有这里了，所以把这个表的索引做了修改，改为<code>(fld_fleet_id,tbl_fleet_science)</code>，与代码中的使用顺序一致。 </p>
+<p>更新之后确实也没有出现过类似的问题，但是这次死锁具体是不是因为这个顺序导致的，也不能完全确定，也许是某些不可知的问题，后面的工作中如果再遇到同类问题再来解决这个问题吧。</p>
 
       
     </div>
@@ -102,7 +78,7 @@ print(r.zrevrank(<span class="string">"1014-rank-4"</span>,<span class="number">
         
   
   <div class="tags">
-    <a href="/tags/Linux/">Linux</a>, <a href="/tags/Redis/">Redis</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/MySql/">MySql</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
