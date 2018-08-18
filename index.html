@@ -2119,14 +2119,12 @@ passwd haizhan
     epoll_data_t data;        <span class="regexp">/* User data variable */</span>
 };
 </code></pre><p><code>events</code>是传入参数，是一个字节的掩码构成的。下面是可以用的事件：</p>
-<pre><code><span class="string">`EPOLLIN`</span> - 当关联的文件可以执行 <span class="keyword">read</span> ()操作时。
-<span class="string">`EPOLLOUT`</span> - 当关联的文件可以执行 <span class="keyword">write</span> ()操作时。
-<span class="string">`EPOLLET`</span> - 设置指定的文件描述符模式为边缘触发，默认的模式是水平触发。
-
-LT(level-triggered)水平触发是缺省的工作方式，并且同时支持block和<span class="keyword">no</span>-block <span class="keyword">socket</span>。在这种模式下，内核告诉你一个fd是否就绪了，然后你可以对这个就绪的fd进行IO操作。如果你不作任何操作，内核还是会继续通知你，直到这个fd的数据被读完。
-
-ET(edge-triggered)边缘触发是高速工作方式，只支持<span class="keyword">no</span>-block <span class="keyword">socket</span>。在这种模式下，当fd从未就绪变为就绪时，内核通过epoll告诉你。然后它会假设你知道文件描述符已经就绪，并且不会再为那个文件描述符发送更多的就绪通知，直到你做了某些操作导致那个文件描述符不再为就绪状态了(直到你读取了全部数据或者fd遇到错误）。
-</code></pre><p>上面这些事件是经常用到的，下面这几个事件目前理解还不够深，先放着吧。。。</p>
+<pre><code><span class="escape">`E</span>POLLIN<span class="escape">` </span>- 当关联的文件可以执行 read ()操作时。
+<span class="escape">`E</span>POLLOUT<span class="escape">` </span>- 当关联的文件可以执行 write ()操作时。
+<span class="escape">`E</span>POLLET<span class="escape">` </span>- 设置指定的文件描述符模式为边缘触发，默认的模式是水平触发。
+</code></pre><p>LT(level-triggered)水平触发是缺省的工作方式，并且同时支持block和no-block socket。在这种模式下，内核告诉你一个fd是否就绪了，然后你可以对这个就绪的fd进行IO操作。如果你不作任何操作，内核还是会继续通知你，直到这个fd的数据被读完。</p>
+<p>ET(edge-triggered)边缘触发是高速工作方式，只支持no-block socket。在这种模式下，当fd从未就绪变为就绪时，内核通过epoll告诉你。然后它会假设你知道文件描述符已经就绪，并且不会再为那个文件描述符发送更多的就绪通知，直到你做了某些操作导致那个文件描述符不再为就绪状态了(直到你读取了全部数据或者fd遇到错误）。</p>
+<p>上面这些事件是经常用到的，下面这几个事件目前理解还不够深，先放着吧。。。</p>
 <pre><code>EPOLLRDHUP - (从 linux <span class="number">2.6</span>.<span class="number">17</span> 开始)当socket关闭的时候，或者半关闭写段的(当使用边缘触发的时候，这个标识在写一些测试代码去检测关闭的时候特别好用)
 EPOLLPRI - 当 read ()能够读取紧急数据的时候。
 EPOLLERR - 当关联的文件发生错误的时候，<span class="function"><span class="title">epoll_wait</span><span class="params">()</span></span> 总是会等待这个事件，并不是需要必须设置的标识。
