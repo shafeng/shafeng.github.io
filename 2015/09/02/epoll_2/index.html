@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>codis(中) | Shafeng`s blog</title>
+  <title>epoll的各种框架 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="codis(中)"/>
+  <meta property="og:title" content="epoll的各种框架"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,31 +52,17 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2018-05-08T04:00:00.000Z"><a href="/2018/05/08/codis_2/">2018-05-08</a></time>
+        <time datetime="2015-09-02T04:00:00.000Z"><a href="/2015/09/02/epoll_2/">2015-09-02</a></time>
       
       
   
-    <h1 class="title">codis(中)</h1>
+    <h1 class="title">epoll的各种框架</h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="Codis_Dashboard_的配置和使用">Codis Dashboard 的配置和使用</h2><p>前一篇文章记录了codis的安装和启动，这一篇记录一下codis的使用。 codis的环境布置好之后需要用codis的网页来进行一系列配置，包括redis组的配置和代理地址的添加等等</p>
-<p>管理页面的主页，显示了当前使用的内存量，连接数，redis中存储的key的数量和每秒请求数</p>
-<hr>
-<p><img src="/2018/05/08/codis_2/main.png" alt="主页"></p>
-<hr>
-<p>在 Proxy 栏可看到我们已经启动的 Proxy， 但是 Group 栏为空，因为我们启动的 codis-server 并未加入到集群 添加 NEW GROUP，NEW GROUP 行输入 1，再点击 NEW GROUP 即可 添加 Codis Server</p>
-<hr>
-<p><img src="/2018/05/08/codis_2/proxy.png" alt="代理"></p>
-<hr>
-<p>添加实例（即添加后端的redis服务器）<br>Add Server 行输入我们刚刚启动的 codis-server 地址，添加到我们刚新建的 Group，然后再点击 Add Server 按钮即可</p>
-<hr>
-<p><img src="/2018/05/08/codis_2/group.png" alt="redis组"></p>
-<hr>
-<p>对slot初始化要分组，之后可以动态调整slot的归属</p>
-
+        <h1 id="epoll的各种框架">epoll的各种框架</h1>
       
     </div>
     <footer>
@@ -85,7 +71,7 @@
         
   
   <div class="tags">
-    <a href="/tags/Linux/">Linux</a>, <a href="/tags/Redis/">Redis</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+    <a href="/tags/C/">C++</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
