@@ -62,7 +62,49 @@
     </header>
     <div class="entry">
       
-        <h1 id="epoll的各种框架">epoll的各种框架</h1>
+        <h1 id="epoll的各种框架">epoll的各种框架</h1><p>了解了epoll的基本用法之后，再来看看别人都是怎么用的，很多应用广泛的开源项目中都可以看到epoll的不同用法，总结一下各种用法的优缺点，以及我们项目中的用法（文中所有数据都来源于网络，本人并没有做实验验证过）</p>
+<p>首先回顾一下epoll使用中的几个函数.</p>
+<pre><code>epfd = epoll_create<span class="comment">(...)</span>;             <span class="comment">// 创建指定大小的epoll句柄epfd</span>
+</code></pre><p>后文描述中的 listen 部分:</p>
+<pre><code>listen_fd = socket(<span class="attribute">...</span>);              <span class="comment">// 创建listen_fd</span>
+bind(listen_fd, addr);                <span class="comment">// 把listen_fd绑定到本地地址addr</span>
+listen(listen_fd, <span class="attribute">...</span>);               <span class="comment">// 监听listen_fd </span>
+</code></pre><p>后文描述中的 accept 部分:</p>
+<pre><code>fd = accept<span class="comment">(listen_fd, ...)</span>;          <span class="comment">// 从listen_fd接受一个新接进来的连接套接字fd</span>
+epoll_ctl<span class="comment">(epfd, op, fd, event)</span>;       <span class="comment">// 对epfd做op操作，操作涉及监听fd的event事件</span>
+                                    <span class="comment">// 比如op是EPOLL_CTL_ADD，意思是把 “对fd监听event事件” 注册到 epfd里面</span>
+</code></pre><p>后文描述中的 epoll_wait 部分:</p>
+<pre><code><span class="built_in">num</span> = epoll_wait(epfd, events, ...);  <span class="comment">// 监听句柄epfd上的事件，并把事件通过event数组返回，num返回值是发生事件的个数</span>
+</code></pre><p>各家不同的使用方法：</p>
+<h2 id="一、epoll_1线程(listen+accept+epoll_wait+处理)_模型">一、epoll 1线程(listen+accept+epoll_wait+处理) 模型</h2><p>代表开源产品：redis</p>
+<p>基本原理：<br>这种模型基本就是教科书上的epoll使用方式：<br>socket -&gt; bind -&gt; listen -&gt; epoll_wait -&gt;  accept或者处理读写事件 -&gt; epoll_wait ……<br>redis基本遵循这样循环处理 网络事件和定时器事件</p>
+<p>echo server测试：10万QPS</p>
+<p>优点：<br>1）模型简单。这个模型是最简单的，代码实现方便，适合计算密集型应用<br>2）不用考虑并发问题。模型本身是单线程的，使得服务的主逻辑也是单线程的，那么就不用考虑许多并发的问题，比如锁和同步<br>3）适合短耗时服务。对于像redis这种每个事件基本都是查内存，是十分适合的，一来并发量可以接受，二来redis内部众多数据结构都是非常简单地实现</p>
+<p>缺点：<br>1）顺序执行影响后续事件。因为所有处理都是顺序执行的，所以如果面对长耗时的事件，会延迟后续的所有任务，特别对于io密集型的应用，是无法承受的</p>
+<h2 id="二、epoll_1线程(listen+accept+epoll_wait)_+_1队列通知_+_n线程(处理)_模型">二、epoll 1线程(listen+accept+epoll_wait) + 1队列通知 + n线程(处理) 模型</h2><p>代表开源产品：thrift-nonblocking-server</p>
+<p>基本原理：<br>1）在这种模型中，有1+n个线程。<br>2）有1个线程执行端口的listen并把listen_fd加入该线程的epoll_set，然后循环去做如下事情：1）epoll_wait监听新连接的到来，2）调用accept获得新到的fd，3）把fd放入队列，4） 回到 “1)” 继续epoll_wait<br>3）另外有n个工作线程，从队列里面获取文件描述符，然后执行：1）读取数据，2）执行任务</p>
+<p>echo server测试：6万QPS</p>
+<p>优点：<br>1）模型简单。这种模型的代码实现也是非常方便的<br>2）并发能力强。对于任务耗时或者IO密集的服务，可以充分利用多核cpu的性能实现异步并发处理<br>3）适合生产环境。虽然QPS没有特别高，但是对于目前大部分大型网站的吞吐量，这种网络处理能力也是足够了的，这也是为什么thrift nonblocking server可以用这种模型的原因<br>4）负载均衡。在这个模型，每个工作工作线程完成任务之后就会去队列里主动获取文件描述符，这个模型天然地就实现了负载均衡的功能。原因有2，一来是只有空闲的线程会拿到任务，二来是所有fd的事件监听都是由监听线程完成</p>
+<p>缺点：<br>1）队列是性能瓶颈。<br>俗话说，不怕锁，只怕锁竞争。这个模型在运行过程中，n+1个线程竞争于队列之上，所以队列的访问是需要加锁的。对于echo server这种每次任务耗时都极短的服务，每次处理完任务就很快就会回到队列锁的争抢行列。大量的锁竞争直接拖垮了QPS。<br>不过好在常见的生产环境web服务都不是echo server，每次请求都会是毫秒级的，不会在锁竞争上产生问题。</p>
+<h2 id="三、epoll_1线程(listen+accept+epoll_wait)_+_n队列通知_+_n线程(处理)_模型">三、epoll 1线程(listen+accept+epoll_wait) + n队列通知 + n线程(处理) 模型</h2><p>代表开源产品：memcached</p>
+<p>基本原理：<br>这种模型基本类似于 上一种模型，区别在于 把1个队列换成n个队列，每个工作线程绑定一个队列，每个工作线程从自己的队列消费数据，其他的保持一致</p>
+<p>echo server测试：20万QPS</p>
+<p>优点：<br>1）并发能力更强。相比于单队列的模型，多队列的好处是减少了队列的锁竞争。对于短耗时任务能得到比较多的提升，很适合缓存类应用</p>
+<p>缺点：<br>1）有可能导致负载不均。因为监听线程是不会去根据不同线程的处理速度决定把任务分配给哪个线程的，如果每个任务的耗时不均衡，那么就可能导致有些线程累死，有些线程饿死</p>
+<p>memcached对该模型改进：<br>memcached是多线程且是缓存类应用，非常适合这个模型。改进如下：<br>1）工作线程拿到的fd，这个fd会加到本线程的epoll_set里面，这个fd的后续读写事件都由该线程处理<br>2）工作线程和监听线程之间建立了管道，工作线程的管道fd也加入到工作线程的epoll_set里面，那么就可以让 ‘新fd到来’和‘旧fd可读写’ 这两种事件都由epoll_set监听，减少调度的复杂性<br>3）因为memcached的任务基本是查内存的工作，耗时短而且相对均匀，所以对负载问题不是很敏感，可以使用该模型</p>
+<h2 id="四、epoll_1进程(listen)_+_n进程(accept+epoll_wait+处理)_模型（epoll_1线程(listen)_+_n线程(accept+epoll_wait+处理)_模型）">四、epoll 1进程(listen) + n进程(accept+epoll_wait+处理) 模型（epoll 1线程(listen) + n线程(accept+epoll_wait+处理) 模型）</h2><p>代表开源产品：nginx</p>
+<p>基本原理：(依据nginx的设计分析)<br>1）master进程监听新连接的到来，并让其中一个worker进程accept。这里需要处理惊群效应问题，详见nginx的accept_mutex设计<br>2）worker进程accept到fd之后，把fd注册到到本进程的epoll句柄里面，由本进程处理这个fd的后续读写事件<br>3）worker进程根据自身负载情况，选择性地不去accept新fd，从而实现负载均衡</p>
+<p>echo server测试：后续补充</p>
+<p>优点：<br>1）进程挂掉不会影响这个服务<br>2）和第二种模型一样，是由worker主动实现负载均衡的，这种负载均衡方式比由master来处理更简单</p>
+<p>缺点：<br>1）多进程模型编程比较复杂，进程间同步没有线程那么简单<br>2）进程的开销比线程更多</p>
+<h2 id="五、epoll_1线程(listen+accept)_+_n线程(epoll_wait+处理)_模型">五、epoll 1线程(listen+accept) + n线程(epoll_wait+处理) 模型</h2><p>对应开源产品：无</p>
+<p>基本原理：<br>1）1个线程监听端口并accept新fd，把fd的监听事件round robin地注册到n个worker线程的epoll句柄上<br>2）如果worker线程是多个线程共享一个epoll句柄，那么事件需要设置EPOLLONESHOT，避免在读写fd的时候，事件在其他线程被触发<br>3）worker线程epoll_wait获得读写事件并处理之</p>
+<p>echo server测试：200万QPS（因为资源有限，测试client和server放在同一个物理机上，实际能达到的上限应该还会更多）</p>
+<p>优点：<br>1）减少竞争。在第四种模型中，worker需要去争着完成accept，这里有竞争。而在这种模型中，就消除了这种竞争</p>
+<p>缺点：<br>1）负载均衡。这种模型的连接分配，又回到了由master分配的模式，依然会存在负载不均衡的问题。可以让若干个线程共享一个epoll句柄，从而把任务分配均衡到多个线程，实现全局更好的负载均衡效果</p>
+<h2 id="我们的使用">我们的使用</h2><p>我们项目中的epoll模型基本上是第五种模型的方式，一线程负责listen+accept，accept到的fd通过负载情况分配到负载最低的n线程中的一个线程中去，在n线程初始化中调用epoll_create，所以n线程都有自己的epoll对象，n个worker线程自己用<br>自己的epoll对象来epoll_wait分配给自己的fd，处理读写事件。 最后n线程将整合好的消息结构push到主逻辑线程的队列中，主逻辑线程进行逻辑处理。因为游戏服务器都是长连接，基本上每个玩家造成的访问量基本上差别不大，所以在负载上基本上<br>可以认为是均衡的，而且这种模型没有竞争，QPS高，非常适合我们的游戏项目。</p>
+<h2 id="总结和启示">总结和启示</h2><p>1、除了第一个模型，其他模型都是多线程/多进程的，所以都采用了“1个master-n个worker”结构<br>2、如果accept由master执行，那么master就需要执行分配fd的任务，这种设计会存在负载不均的问题；但是这种情况下，accept由谁执行不会存在竞争，性能更好<br>3、如果accept让worker去执行，那么同一个listen_fd，这个时候由哪个worker来执行accept，便产生了竞争；产生了竞争就使得性能降低<br>4、对于一般的逻辑性业务，选择由master去accept并分配任务更合适一些。因为大部分业务请求耗时都较长(毫秒级别)，而且请求的耗时不尽相同，所以对负载均衡要求也较高；另外一般的业务，也不可能到单机10万QPS的量级<br>5、这几个模型的变化，无非就是三个问题的选择：<br>1）多进程，多线程，还是单线程？<br>2）每个worker自己管理事件，还是由master统一管理？<br>3）accept由master还是worker执行？<br>6、在系统设计中，需要根据实际情况和需求，选择合适的网络事件方案</p>
+
       
     </div>
     <footer>
