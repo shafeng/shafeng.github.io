@@ -62,7 +62,7 @@
     </header>
     <div class="entry">
       
-        <h1 id="epoll的各种框架">epoll的各种框架</h1><p>了解了epoll的基本用法之后，再来看看别人都是怎么用的，很多应用广泛的开源项目中都可以看到epoll的不同用法，总结一下各种用法的优缺点，以及我们项目中的用法（文中所有数据都来源于网络，本人并没有做实验验证过）</p>
+        <h1 id="epoll的各种框架">epoll的各种框架</h1><p>了解了epoll的基本用法之后，再来看看别人都是怎么用的，很多应用广泛的开源项目中都可以看到epoll的不同用法，总结一下各种用法的优缺点，以及我们项目中的用法（文中所有QPS数据都来源于网络，本人并没有做实验验证过）</p>
 <p>首先回顾一下epoll使用中的几个函数.</p>
 <pre><code>epfd = epoll_create<span class="comment">(...)</span>;             <span class="comment">// 创建指定大小的epoll句柄epfd</span>
 </code></pre><p>后文描述中的 listen 部分:</p>
