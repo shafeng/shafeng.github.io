@@ -85,6 +85,57 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2018-08-24T16:00:00.000Z"><a href="/2018/08/25/代码静态检查/">2018-08-25</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/08/25/代码静态检查/">C++代码静态检查</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="代码静态检查">代码静态检查</h2><p>人生要不断完善自己，项目也一样，最近用到了代码静态检查工具来检测了一下项目代码，用了两个工具，linux下的cppcheck和windows下的TscanCode，用法都很简单，就不细说了，最后得出的结果还是有一些区别的，大部分是<br>真实存在的代码问题。</p>
+<p>cppcheck的结果像这样:</p>
+<pre><code>[haizhan_src_2/ActivityTask/ActivityTask.cpp:<span class="number">48</span>]: (warning) Member variable <span class="string">'CActivityTask::tmExpire'</span> is <span class="keyword">not</span> initialized <span class="keyword">in</span> the <span class="function"><span class="keyword">constructor</span>.
+[<span class="title">haizhan_src_2</span>/<span class="title">ActivityTask</span>/<span class="title">ActivityTask</span>.<span class="title">cpp</span>:</span><span class="number">48</span>]: (warning) Member variable <span class="string">'CActivityTask::bSendInsert'</span> is <span class="keyword">not</span> initialized <span class="keyword">in</span> the <span class="function"><span class="keyword">constructor</span>.
+[<span class="title">haizhan_src_2</span>/<span class="title">ActivityTask</span>/<span class="title">ActivityTask</span>.<span class="title">cpp</span>:</span><span class="number">48</span>]: (warning) Member variable <span class="string">'CActivityTask::bDBInsert'</span> is <span class="keyword">not</span> initialized <span class="keyword">in</span> the <span class="function"><span class="keyword">constructor</span>.
+[<span class="title">haizhan_src_2</span>/<span class="title">Email</span>/<span class="title">SystemEmailManager</span>.<span class="title">cpp</span>:</span><span class="number">407</span>] -&gt; [haizhan_src_2/Email/SystemEmailManager.cpp:<span class="number">404</span>]: (error) Iterator <span class="string">'t_it'</span> used after element has been erased.
+[haizhan_src_2/userinfo_export/userinfo_export_serviceService.cpp:<span class="number">379</span>]: (error) Dereferencing <span class="string">'_pmapRoleInfos'</span> after it is deallocated / released
+</code></pre><p>它会给出一些warning和error，包括未初始化的变量，数组越界使用，失效的迭代器，无效的函数等等等等。</p>
+<p>TscanCode的结果：</p>
+<pre><code>&lt;?xml <span class="property">version</span>=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span>?&gt;
+&lt;results&gt;
+    &lt;<span class="keyword">error</span> <span class="type">file</span>=<span class="string">"E:\Work\Server\haizhan_src\ArenaMain\ArenaSceneDead.cpp"</span> line=<span class="string">"255"</span> <span class="property">id</span>=<span class="string">"nullpointer"</span> subid=<span class="string">"dereferenceAfterCheck"</span> severity=<span class="string">"error"</span> msg=<span class="string">"[_pPlayerFlag.player_before] is dereferenced here after checking null at line 250, which implies that [ _pPlayerFlag.player_before ] may be null dereferenced."</span> web_identify=<span class="string">"{&amp;quot;identify&amp;quot;:&amp;quot;_pPlayerFlag.player_before&amp;quot;}"</span> func_info=<span class="string">"int CArenaSceneDead::check_FlagTimeValue ( int _unTimeInterval , TFlagPlayerInfo * _pPlayerFlag )"</span>/&gt;
+    &lt;<span class="keyword">error</span> <span class="type">file</span>=<span class="string">"E:\Work\Server\haizhan_src\BattleMatch\BattleMapMatch.cpp"</span> line=<span class="string">"1265"</span> <span class="property">id</span>=<span class="string">"nullpointer"</span> subid=<span class="string">"dereferenceAfterCheck"</span> severity=<span class="string">"error"</span> msg=<span class="string">"[_pOtherMatchTeam] is dereferenced here after checking null at line 1194, which implies that [ _pOtherMatchTeam ] may be null dereferenced."</span> web_identify=<span class="string">"{&amp;quot;identify&amp;quot;:&amp;quot;_pOtherMatchTeam&amp;quot;}"</span> func_info=<span class="string">"void CMapMatch::RepairBalance ( TMatchTempCampVec &amp;amp; _stMatchTempCampVec , TMatchTempElo &amp;amp; _stElo , bool _bUseOneTeam , bool _bUsePrioryTeam , CMatchTeamMap * _pOtherMatchTeam , int _eOtherMatchType )"</span>/&gt;
+    &lt;<span class="keyword">error</span> <span class="type">file</span>=<span class="string">"E:\Work\Server\haizhan_src\Warship\ExtraPartPlugin.cpp"</span> line=<span class="string">"707"</span> <span class="property">id</span>=<span class="string">"nullpointer"</span> subid=<span class="string">"dereferenceAfterCheck"</span> severity=<span class="string">"error"</span> msg=<span class="string">"[t_consume] is dereferenced here after checking null at line 700, which implies that [ t_consume ] may be null dereferenced."</span> web_identify=<span class="string">"{&amp;quot;identify&amp;quot;:&amp;quot;t_consume&amp;quot;}"</span> func_info=<span class="string">"void CExtraPartPlugin::deduct_RankUpConsumables ( int _consumeid , const char * _szReason , int _unReasonParam )"</span>/&gt;
+    &lt;<span class="keyword">error</span> <span class="type">file</span>=<span class="string">"E:\Work\Server\haizhan_src\xmlloader\MatchBuyDataManager.cpp"</span> line=<span class="string">"30"</span> <span class="property">id</span>=<span class="string">"logic"</span> subid=<span class="string">"uninitMemberVar"</span> severity=<span class="string">"warning"</span> msg=<span class="string">"Member variable &amp;apos;TRecommData::pIStdMatchBuyMain,&amp;apos; is not initialized in the constructor."</span> web_identify=<span class="string">"{&amp;quot;identify&amp;quot;:&amp;quot;TRecommData::pIStdMatchBuyMain,&amp;quot;}"</span> func_info=<span class="string">""</span>/&gt;
+    &lt;<span class="keyword">error</span> <span class="type">file</span>=<span class="string">"E:\Work\Server\haizhan_src\xmlloader\StdListener.cpp"</span> line=<span class="string">"110"</span> <span class="property">id</span>=<span class="string">"logic"</span> subid=<span class="string">"SignedUnsignedMixed"</span> severity=<span class="string">"warning"</span> msg=<span class="string">"Unsigned to signed assignment occurs."</span> web_identify=<span class="string">""</span> func_info=<span class="string">"void Prop::set_Param1 ( int param )"</span>/&gt;
+&lt;/results&gt;
+</code></pre><p>同样会给出很多错误，但是比cppcheck更加详细，标明了错误的类型，子类型，错误内容。</p>
+<h2 id="总结">总结</h2><p>两种工具各有千秋，不过个人认为还是TscanCode更好用，报告的内容也更全，腾讯还是做点好事的。。。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2018-06-22T06:00:00.000Z"><a href="/2018/06/22/云厂商扯皮/">2018-06-22</a></time>
       
       
@@ -1258,7 +1309,10 @@ server-id = 1
 <span class="constant">expire_logs_days</span> = 5
 secure-file-priv=
 <span class="constant">tmpdir</span>=/data/mysql_tmp
-</code></pre><p>innodb_buffer_pool_size 这个选项调大可以增加innodb的内存大小,减少io操作<br>expire_logs_days 这个选项可以指定binlog保存的天数,binlog占用硬盘空间特别大,但是binlog又是恢复数据库时最宝贵的log,所以如何权衡这个问题还得结合自己项目的需要<br>secure-file-priv= 这个选项可以让其他用户写入数据,项目在合服时无法写入数据,加入这个配置可以降低数据库的安全性检查<br>tmpdir=/data/mysql_tmp 这个选项可以指定mysql在运行时使用的硬盘空间地址,默认的地址是在系统盘,而一般系统盘的空间较小,把目录指定到空间较大的目录可以有效提高数据库的io效率</p>
+</code></pre><p>innodb_buffer_pool_size 这个选项调大可以增加innodb的内存大小,减少io操作</p>
+<p>expire_logs_days 这个选项可以指定binlog保存的天数,binlog占用硬盘空间特别大,但是binlog又是恢复数据库时最宝贵的log,所以如何权衡这个问题还得结合自己项目的需要</p>
+<p>secure-file-priv= 这个选项可以让其他用户写入数据,项目在合服时无法写入数据,加入这个配置可以降低数据库的安全性检查</p>
+<p>tmpdir=/data/mysql_tmp 这个选项可以指定mysql在运行时使用的硬盘空间地址,默认的地址是在系统盘,而一般系统盘的空间较小,把目录指定到空间较大的目录可以有效提高数据库的io效率<br>如果表结构发生了改变，需要增加表列，而这个表本身的数据量非常大，那么mysql就会用到大量的硬盘空间，如果空间不足，在修改表结构的时候可能会报错<code>Incorrect key file for table &#39;tbl_xxx&#39;; try to repair it</code>,<br>那么就必须把mysql的tmpdir指定到一个容量大的地方。<br>/data/mysql_tmp文件夹必须创建出来，并且给mysql用户添加权限 <code>chown -R mysql:mysql mysql_tmp/</code></p>
 
       
     </div>
@@ -2480,6 +2534,61 @@ ev.data.fd  = listen_sock;
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
+<pre><code><span class="keyword">class</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+};
+<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    bar(<span class="keyword">char</span>);
+    foo(<span class="keyword">char</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
+<span class="keyword">public</span>:
+    foo(<span class="keyword">int</span>);
+<span class="keyword">protected</span>:
+    <span class="keyword">int</span> ival;
+    <span class="keyword">char</span> cval;
+};
+<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
+</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/c++11 bind的使用/">2015-05-21</a></time>
       
       
@@ -2581,61 +2690,6 @@ ev.data.fd  = listen_sock;
     <span class="keyword">return</span> <span class="number">1</span>;
 }
 </code></pre><p>修改为类成员函数后就是这样了,这里遇到一个问题,<code>main</code>函数中调用<code>get_attr</code>时分成了两条代码,<br>因为写成这样编译报错<code>attr.get_attr(bind(&amp;MyClass::set_prop,&amp;myclass,_1,_2,std::bind(&amp;Info::new_info,&amp;info)));</code><br>我估计可能是类型不匹配之类的错误.总之分成两条代码就OK了. </p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2015-05-21T09:49:39.000Z"><a href="/2015/05/21/二义性/">2015-05-21</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/05/21/二义性/">关于C++继承的二义性</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="关于C++继承的二义性">关于C++继承的二义性</h2><p>天气太热写不下去代码,就翻柜子,找到c++primer翻了一下,好久不看书,记一下翻到的内容,稍微巩固下…<br>给定下面的类层次，从 VMI 类内部可以限定地访问哪些继承成员？哪些继承成员需要限定？解释你的推理。</p>
-<pre><code><span class="keyword">class</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-};
-<span class="keyword">class</span> Derived1 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    bar(<span class="keyword">char</span>);
-    foo(<span class="keyword">char</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> Derived2 : <span class="keyword">virtual</span> <span class="keyword">public</span> Base {
-<span class="keyword">public</span>:
-    foo(<span class="keyword">int</span>);
-<span class="keyword">protected</span>:
-    <span class="keyword">int</span> ival;
-    <span class="keyword">char</span> cval;
-};
-<span class="keyword">class</span> VMI : <span class="keyword">public</span> Derived1, <span class="keyword">public</span> Derived2 { };
-</code></pre><p>从这个继承层次看，VMI类内部访问哪些没有二义性，哪些成员有二义性呢？<br>从VMI类内部可以不加限定地访问继承成员bar和ival：bar在共享基类Base和派生类Derived1中都存在，但特定派生类实例的优先级高于共享基类实例，所以在VMI类内部不加限定地访问bar，则访问到的是Derived1中的bar实例。ival在共享基类Base和派生类Derived2中都存在，同理，在VMI类中不加限定地访问ival，访问到的是Derived2中的ival实例。<br>继承成员foo和cval需要限定：二者在Derived1和Derived2中都存在，Derived1和Derived2均为Base的派生类，访问优先级相同，所以，如果在VMI类内不加限定地访问foo和cval，则会出现二义性。</p>
 
       
     </div>
@@ -4262,9 +4316,9 @@ GLint main(GLint argc,char** argv)
   <h3 class="title">标签</h3>
   <ul class="entry">
   
-    <li><a href="/tags/C/">C++</a><small>18</small></li>
+    <li><a href="/tags/C/">C++</a><small>19</small></li>
   
-    <li><a href="/tags/DB/">DB</a><small>2</small></li>
+    <li><a href="/tags/DB/">DB</a><small>1</small></li>
   
     <li><a href="/tags/FTP/">FTP</a><small>1</small></li>
   
@@ -4272,13 +4326,13 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/Linux/">Linux</a><small>20</small></li>
   
-    <li><a href="/tags/MySql/">MySql</a><small>3</small></li>
+    <li><a href="/tags/MySql/">MySql</a><small>4</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>32</small></li>
+    <li><a href="/tags/博客/">博客</a><small>33</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>28</small></li>
+    <li><a href="/tags/技术/">技术</a><small>29</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   
@@ -4292,7 +4346,7 @@ GLint main(GLint argc,char** argv)
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/DB/" style="font-size: 11.67px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 16.67px;">Linux</a> <a href="/tags/MySql/" style="font-size: 13.33px;">MySql</a> <a href="/tags/Redis/" style="font-size: 13.33px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 16.67px;">Linux</a> <a href="/tags/MySql/" style="font-size: 13.33px;">MySql</a> <a href="/tags/Redis/" style="font-size: 11.67px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 
