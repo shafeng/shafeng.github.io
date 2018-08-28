@@ -99,10 +99,14 @@ server-id = 1
 <span class="constant">expire_logs_days</span> = 5
 secure-file-priv=
 <span class="constant">tmpdir</span>=/data/mysql_tmp
-</code></pre><p>innodb_buffer_pool_size 这个选项调大可以增加innodb的内存大小,减少io操作</p>
-<p>expire_logs_days 这个选项可以指定binlog保存的天数,binlog占用硬盘空间特别大,但是binlog又是恢复数据库时最宝贵的log,所以如何权衡这个问题还得结合自己项目的需要</p>
-<p>secure-file-priv= 这个选项可以让其他用户写入数据,项目在合服时无法写入数据,加入这个配置可以降低数据库的安全性检查</p>
-<p>tmpdir=/data/mysql_tmp 这个选项可以指定mysql在运行时使用的硬盘空间地址,默认的地址是在系统盘,而一般系统盘的空间较小,把目录指定到空间较大的目录可以有效提高数据库的io效率<br>如果表结构发生了改变，需要增加表列，而这个表本身的数据量非常大，那么mysql就会用到大量的硬盘空间，如果空间不足，在修改表结构的时候可能会报错<code>Incorrect key file for table &#39;tbl_xxx&#39;; try to repair it</code>,<br>那么就必须把mysql的tmpdir指定到一个容量大的地方。<br>/data/mysql_tmp文件夹必须创建出来，并且给mysql用户添加权限 <code>chown -R mysql:mysql mysql_tmp/</code></p>
+</code></pre><p>###innodb_buffer_pool_size</p>
+<p>这个选项调大可以增加innodb的内存大小,减少io操作</p>
+<p>###expire_logs_days</p>
+<p>这个选项可以指定binlog保存的天数,binlog占用硬盘空间特别大,但是binlog又是恢复数据库时最宝贵的log,所以如何权衡这个问题还得结合自己项目的需要</p>
+<p>###secure-file-priv= </p>
+<p>这个选项可以让其他用户写入数据,项目在合服时无法写入数据,加入这个配置可以降低数据库的安全性检查</p>
+<p>###tmpdir=/data/mysql_tmp</p>
+<p>这个选项可以指定mysql在运行时使用的硬盘空间地址,默认的地址是在系统盘,而一般系统盘的空间较小,把目录指定到空间较大的目录可以有效提高数据库的io效率<br>如果表结构发生了改变，需要增加表列，而这个表本身的数据量非常大，那么mysql就会用到大量的硬盘空间，如果空间不足，在修改表结构的时候可能会报错<code>Incorrect key file for table &#39;tbl_xxx&#39;; try to repair it</code>,<br>那么就必须把mysql的tmpdir指定到一个容量大的地方。<br>/data/mysql_tmp文件夹必须创建出来，并且给mysql用户添加权限 <code>chown -R mysql:mysql mysql_tmp/</code></p>
 
       
     </div>
