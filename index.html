@@ -53,6 +53,187 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2020-02-19T16:00:00.000Z"><a href="/2020/02/20/openvpn/">2020-02-20</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2020/02/20/openvpn/">武汉肺炎期间搭建的公司内网vpn</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="武汉肺炎期间搭建的公司内网vpn">武汉肺炎期间搭建的公司内网vpn</h2><p>以前在外网vps上搭建过openvpn，过程很复杂，主要是验证这一块，各种秘钥证书让openvpn架设起来很不友好。可是最后搭建成功后被防火长城严重干扰，基本上没法用。近期武汉的肺炎导致公司不能正常开工，公司的网管又不能及时搭建vpn，为了大家能够有一个良好的远程办公体验，我绕过了网管控制的公司外网出口路由器自行搭建了部门的vpn。</p>
+<p><img src="/2020/02/20/openvpn/tap.png" alt="OpenVPN"></p>
+<p>总体的思路大概是上图这样，在部门10.0.17.0/24网段内的一台内网服务器10.0.17.48搭建openvpn服务，采用tap模式将内网ip地址分配给openvpn客户端，并通过外网端口转发将内网的服务映射到外网vps上</p>
+<h3 id="OpenVPN的安装">OpenVPN的安装</h3><p>网上大把openVPN的安装教程文章，基本上都是手动配置各种证书和秘钥，非常的繁琐烦人，当然不止我觉得烦，所以已经有人做了自动安装的脚本，github上有两个好几K星星的安装脚本，我选了其中一个：<a href="https://github.com/angristan/openvpn-install" target="_blank" rel="external">https://github.com/angristan/openvpn-install</a><br>按照脚本提供的使用方法，直接运行以下命令即可：</p>
+<pre><code>curl -O https://raw.githubusercontent.com/angristan/openvpn-<span class="operator"><span class="keyword">install</span>/<span class="keyword">master</span>/openvpn-<span class="keyword">install</span>.sh
+chmod +x openvpn-<span class="keyword">install</span>.sh
+./openvpn-<span class="keyword">install</span>.sh</span>
+</code></pre><p>安装过程中需要手动输入一些配置，比如tcp/udp模式的选择，对外提供服务的ip和port，以及其他一些关于证书和秘钥的自定义参数。 我们这里只设置模式和ip端口，因为是内网服务器，脚本会直接帮你输入内网ip，这里我们要改为最后对外提供服务的外网ip，上图中的120.100.1.1，端口随便定义。<br>安装结束后会让你输入第一个用户的用户名，之后为这个用户创建ovpn权限文件。<br>如果想增加或者删除用户，再次运行./openvpn-install.sh 脚本即可。</p>
+<h3 id="OpenVPN的配置">OpenVPN的配置</h3><p>这个脚本提供的是tun模式的服务器，使用tun模式的话，openvpn客户端会得到另外一个内网网段的地址而不能与公司内网10.0.17.0/24直接交互，如需交互就要配置复杂的路由表，操作起来稍微有些不太友好。最初我使用了tun模式，10.0.17.48启动tun模式后会虚拟一张拥有10.8.0.1地址的网卡，并自动成为10.8.0.0/24网段的网关，openvpn客户端会得到10.8.0.0/24网段的ip地址，如果公司内的电脑想要访问10.8.0.0/24网段的机器，比如一个服务器开发人员远程通过openvpn连入公司内网,得到ip地址10.8.0.5，在自己的开发机上启动了一个服务器程序，处于公司内的测试人员想要访问该远程开发人员的服务器程序就需要在本地配置路由表：</p>
+<pre><code><span class="tag">linux</span><span class="pseudo">:route</span> <span class="tag">add</span> <span class="tag">-net</span> 10<span class="class">.8</span><span class="class">.0</span><span class="class">.0</span> <span class="tag">netmask</span> 255<span class="class">.255</span><span class="class">.255</span><span class="class">.0</span> <span class="tag">gw</span> 10<span class="class">.0</span><span class="class">.17</span><span class="class">.48</span> <span class="tag">eth0</span> (对应的删除命令<span class="tag">route</span> <span class="tag">del</span> <span class="tag">-net</span> 10<span class="class">.8</span><span class="class">.0</span><span class="class">.0</span> <span class="tag">netmask</span> 255<span class="class">.255</span><span class="class">.255</span><span class="class">.0</span>，显示路由命令<span class="tag">route</span>)
+<span class="tag">windows</span><span class="pseudo">:oute</span> <span class="tag">add</span> 10<span class="class">.8</span><span class="class">.0</span><span class="class">.0</span> <span class="tag">mask</span> 255<span class="class">.255</span><span class="class">.255</span><span class="class">.0</span> 10<span class="class">.0</span><span class="class">.17</span><span class="class">.48</span>(对应的删除命令<span class="tag">route</span> <span class="tag">delete</span> 10<span class="class">.8</span><span class="class">.0</span><span class="class">.0</span>,显示路由命令<span class="tag">route</span> <span class="tag">print</span>)
+</code></pre><p>这样公司内网10.0.17.0/24网段的机器才知道如何找到10.8.0.0/24网段。 但是我们有一些服务器没有在10.0.17.0/24网段，而是在10.0.30.0/24网段，尝试在10.0.30.0/24网段的机器上配置路由后发现不能双向通信，没有再接着深入研究，决定放弃tun模式使用tap模式，而使用tap模式需要首先创建网桥。</p>
+<h3 id="进行桥接配置">进行桥接配置</h3><p>同样的使用tap模式的教程文章一大把，看起来都非常的繁琐也写的不清楚，最后还是求助于OpenVPN官网的教程：<a href="https://openvpn.net/community-resources/ethernet-bridging/" target="_blank" rel="external">https://openvpn.net/community-resources/ethernet-bridging/</a> </p>
+<p>按照官方教程，我简单总结了一下使用方法：</p>
+<pre><code>首先找一台有两张网卡的服务器(一张网卡不知道行不行，没有深入研究)，选其中一张做桥接。按照自己的网络情况修改bridge-<span class="operator"><span class="keyword">start</span>.sh中的参数。
+
+执行这些防火墙规则(不开防火墙不知道需不需要执行，反正我执行了，也许其实没啥用)：
+iptables -A <span class="keyword">INPUT</span> -<span class="keyword">i</span> tap0 -j <span class="keyword">ACCEPT</span>
+iptables -A <span class="keyword">INPUT</span> -<span class="keyword">i</span> br0 -j <span class="keyword">ACCEPT</span>
+iptables -A FORWARD -<span class="keyword">i</span> br0 -j <span class="keyword">ACCEPT</span>
+
+每次启动和关闭openvpn服务器都要按照这样的顺序：
+run bridge-<span class="keyword">start</span>
+run openvpn
+<span class="keyword">stop</span> openvpn
+run bridge-<span class="keyword">stop</span></span>
+</code></pre><p>官方给出的创建网桥脚本(经过修改参数适用于我的网络环境):</p>
+<p>sample-scripts/bridge-start</p>
+<pre><code><span class="shebang">#!/bin/bash
+</span>
+<span class="comment">#################################</span>
+<span class="comment"># Set up Ethernet bridge on Linux</span>
+<span class="comment"># Requires: bridge-utils</span>
+<span class="comment">#################################</span>
+
+<span class="comment"># Define Bridge Interface</span>
+br=<span class="string">"br0"</span>
+
+<span class="comment"># Define list of TAP interfaces to be bridged,</span>
+<span class="comment"># for example tap="tap0 tap1 tap2".</span>
+tap=<span class="string">"tap0"</span>
+
+<span class="comment"># Define physical ethernet interface to be bridged</span>
+<span class="comment"># with TAP interface(s) above.</span>
+eth=<span class="string">"ens18"</span>
+eth_ip=<span class="string">"10.0.17.48"</span>
+eth_netmask=<span class="string">"255.255.255.0"</span>
+eth_broadcast=<span class="string">"10.0.17.255"</span>
+
+<span class="keyword">for</span> t <span class="keyword">in</span> <span class="variable">$tap</span>; <span class="keyword">do</span>
+    openvpn --mktun --dev <span class="variable">$t</span>
+<span class="keyword">done</span>
+
+brctl addbr <span class="variable">$br</span>
+brctl addif <span class="variable">$br</span> <span class="variable">$eth</span>
+
+<span class="keyword">for</span> t <span class="keyword">in</span> <span class="variable">$tap</span>; <span class="keyword">do</span>
+    brctl addif <span class="variable">$br</span> <span class="variable">$t</span>
+<span class="keyword">done</span>
+
+<span class="keyword">for</span> t <span class="keyword">in</span> <span class="variable">$tap</span>; <span class="keyword">do</span>
+    ifconfig <span class="variable">$t</span> <span class="number">0.0</span>.<span class="number">0.0</span> promisc up
+<span class="keyword">done</span>
+
+ifconfig <span class="variable">$eth</span> <span class="number">0.0</span>.<span class="number">0.0</span> promisc up
+
+ifconfig <span class="variable">$br</span> <span class="variable">$eth_ip</span> netmask <span class="variable">$eth_netmask</span> broadcast <span class="variable">$eth_broadcast</span>
+</code></pre><p>官方给出的停止网桥脚本:</p>
+<p>sample-scripts/bridge-stop</p>
+<pre><code><span class="shebang">#!/bin/bash
+</span>
+<span class="comment">####################################</span>
+<span class="comment"># Tear Down Ethernet bridge on Linux</span>
+<span class="comment">####################################</span>
+
+<span class="comment"># Define Bridge Interface</span>
+br=<span class="string">"br0"</span>
+
+<span class="comment"># Define list of TAP interfaces to be bridged together</span>
+tap=<span class="string">"tap0"</span>
+
+ifconfig <span class="variable">$br</span> down
+brctl delbr <span class="variable">$br</span>
+
+<span class="keyword">for</span> t <span class="keyword">in</span> <span class="variable">$tap</span>; <span class="keyword">do</span>
+    openvpn --rmtun --dev <span class="variable">$t</span>
+<span class="keyword">done</span>
+</code></pre><h3 id="通过外网端口转发将内网的服务映射到外网vps上">通过外网端口转发将内网的服务映射到外网vps上</h3><p>/usr/sbin/openvpn –cd /etc/openvpn/ –config server.conf 启动openvpn服务后，10.0.17.48就开始提供vpn服务了，但是不在公司内的外网工作人员并不能访问内网地址，就需要一个固定的外网地址进行转发，因为一直有使用ssh的端口转发功能，所以最先想到了ssh，由于ssh端口转发只支持tcp，所以只能使用tcp模式启动openvpn:</p>
+<pre><code>根据网络情况修改参数：ssh -fN -R19028:<span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">19028</span> root@<span class="number">120.100</span><span class="number">.1</span><span class="number">.1</span> -p22
+</code></pre><p>这样客户端通过连接120.100.1.1:19028 就可以访问vpn服务了。</p>
+<p>至此整套vpn就搭建完了，即使不在公司内，在家也能接入公司的网络使用svn，redmine等等开发工具了。但是在使用过程中发现一个问题，vpn经常会断开，不是某个客户端自己断开，而是整个服务器停止服务，所有客户端全部都会掉线。阅读了官网关于tcp/udp模式的介绍：<a href="https://openvpn.net/faq/why-does-openvpn-use-udp-and-tcp/" target="_blank" rel="external">https://openvpn.net/faq/why-does-openvpn-use-udp-and-tcp/</a>  原来tcp模式并不是正常的模式，官方的原话是tcp并不稳定，并不推荐使用tcp,但是本着不好用总比没有强还是支持了tcp模式，因为tcp-over-tcp会造成tcp meltdown，两层tcp造成的超时叠加重传会导致tcp熔断，整个连接就over了。<br>又回到寻找转发工具的路上，经过比较后选择了frp：<a href="https://github.com/fatedier/frp" target="_blank" rel="external">https://github.com/fatedier/frp</a>  这个国人开发的工具(貌似codis也是同一个人开发的)支持udp的转发，并支持底层传输使用kcp(kcp基于udp)，这样整个链路连同后最多只有一层tcp协议，不会发生tcp meltdown。frp的使用也很简单，需要在外网vps上启动frps:./frps -c frps.ini，内网openvpn服务器启动frpc:./frpc -c frpc.ini</p>
+<p>frps.ini:</p>
+<pre><code><span class="title">[common]</span>
+<span class="setting">bind_port = <span class="value"><span class="number">19027</span></span></span>
+<span class="setting">kcp_bind_port = <span class="value"><span class="number">19027</span></span></span>
+</code></pre><p>frpc.ini:</p>
+<pre><code>[common]
+server_addr = <span class="number">120.100</span><span class="number">.1</span><span class="number">.1</span>
+server_port = <span class="number">19027</span>
+protocol = kcp
+[openvpn]
+type = udp
+local_ip = <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>
+local_port = <span class="number">19028</span>
+remote_port = <span class="number">19028</span>
+</code></pre><p>这样frp通过19027作为底层传输19028端口的内容，实现udp协议的转发。</p>
+<p>最后把openvpn的配置贴一下备忘 /etc/openvpn/server.conf：</p>
+<pre><code><span class="tag">port</span> 19028
+<span class="tag">proto</span> <span class="tag">udp</span>
+<span class="tag">dev</span> <span class="tag">tap0</span>
+<span class="tag">user</span> <span class="tag">nobody</span>
+<span class="tag">group</span> <span class="tag">nobody</span>
+<span class="tag">persist-key</span>
+<span class="tag">persist-tun</span>
+<span class="tag">keepalive</span> 10 120
+<span class="tag">topology</span> <span class="tag">subnet</span>
+<span class="tag">server-bridge</span> 10<span class="class">.0</span><span class="class">.17</span><span class="class">.48</span> 255<span class="class">.255</span><span class="class">.255</span><span class="class">.0</span> 10<span class="class">.0</span><span class="class">.17</span><span class="class">.150</span> 10<span class="class">.0</span><span class="class">.17</span><span class="class">.253</span>
+<span class="tag">ifconfig-pool-persist</span> <span class="tag">ipp</span><span class="class">.txt</span>
+<span class="tag">push</span> "<span class="tag">dhcp-option</span> <span class="tag">DNS</span> 114<span class="class">.114</span><span class="class">.114</span><span class="class">.114</span>"
+<span class="tag">push</span> "<span class="tag">dhcp-option</span> <span class="tag">DNS</span> 114<span class="class">.114</span><span class="class">.114</span><span class="class">.115</span>"
+<span class="tag">push</span> "<span class="tag">route</span> 10<span class="class">.0</span><span class="class">.0</span><span class="class">.0</span> 255<span class="class">.255</span><span class="class">.0</span><span class="class">.0</span>"
+<span class="tag">client-to-client</span>
+<span class="tag">dh</span> <span class="tag">none</span>
+<span class="tag">xxx</span>
+<span class="tag">xxx</span>
+<span class="tag">xxx</span>
+...
+</code></pre><p>客户端权限文件xxx.ovpn:</p>
+<pre><code>client
+proto udp
+remote <span class="number">120.100</span><span class="number">.1</span><span class="number">.1</span> <span class="number">19028</span>
+dev tap
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+verify-x509-name server_B5pwaF04ayWqXebM name
+auth SHA256
+auth-nocache
+cipher AES-<span class="number">128</span>-GCM
+tls-client
+tls-version-min <span class="number">1.2</span>
+tls-cipher TLS-ECDHE-ECDSA-WITH-AES-<span class="number">128</span>-GCM-SHA256
+verb <span class="number">3</span>
+xxx
+xxx
+xxx
+...
+</code></pre>
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2018-08-24T16:00:00.000Z"><a href="/2018/08/25/合服/">2018-08-25</a></time>
       
       
@@ -4328,11 +4509,13 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/MySql/">MySql</a><small>4</small></li>
   
+    <li><a href="/tags/OpenVPN/">OpenVPN</a><small>1</small></li>
+  
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>33</small></li>
+    <li><a href="/tags/博客/">博客</a><small>34</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>29</small></li>
+    <li><a href="/tags/技术/">技术</a><small>30</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   
@@ -4346,7 +4529,7 @@ GLint main(GLint argc,char** argv)
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 16.67px;">Linux</a> <a href="/tags/MySql/" style="font-size: 13.33px;">MySql</a> <a href="/tags/Redis/" style="font-size: 11.67px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
+    <a href="/tags/C/" style="font-size: 15px;">C++</a> <a href="/tags/DB/" style="font-size: 10px;">DB</a> <a href="/tags/FTP/" style="font-size: 10px;">FTP</a> <a href="/tags/HTTP/" style="font-size: 10px;">HTTP</a> <a href="/tags/Linux/" style="font-size: 16.67px;">Linux</a> <a href="/tags/MySql/" style="font-size: 13.33px;">MySql</a> <a href="/tags/OpenVPN/" style="font-size: 10px;">OpenVPN</a> <a href="/tags/Redis/" style="font-size: 11.67px;">Redis</a> <a href="/tags/博客/" style="font-size: 20px;">博客</a> <a href="/tags/技术/" style="font-size: 18.33px;">技术</a> <a href="/tags/源代码/" style="font-size: 10px;">源代码</a> <a href="/tags/转载/" style="font-size: 10px;">转载</a>
   </div>
 </div>
 
@@ -4364,7 +4547,7 @@ GLint main(GLint argc,char** argv)
   </div>
   <footer id="footer" class="inner"><div class="alignleft">
   
-  &copy; 2018 shafeng
+  &copy; 2020 shafeng
   
 </div>
 <div class="clearfix"></div></footer>
