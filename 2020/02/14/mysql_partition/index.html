@@ -52,7 +52,7 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2020-02-13T16:00:00.000Z"><a href="/2020/02/14/mysql表分区/">2020-02-14</a></time>
+        <time datetime="2020-02-13T16:00:00.000Z"><a href="/2020/02/14/mysql_partition/">2020-02-14</a></time>
       
       
   
@@ -128,7 +128,7 @@ CALL test_select;
 
 <span class="number">3</span>，满足以下条件的某些查询可以大大优化：满足给定WHERE子句的数据只能存储在一个或多个分区上，这会自动从搜索中排除任何剩余的分区。由于可以在创建分区表之后更改分区，因此您可以重新组织数据以增强在首次设置分区方案时可能不会经常使用的频繁查询。排除不匹配分区（以及因此包含的任何行）的能力通常称为分区修剪。
 </code></pre><p>关于查询效率的解释上，我的实验应该符合官方的说法，但是并没有提高查询效率，可能是数据文件拆分后从小块文件中查询得到的效率提升并没有定位分区消耗的效率大。据说一颗3层的B+树可以承载的数据是2000W，超过2000W应该会增加到4层，但是通过查询MySQL的数据我的实验数据表已经达到了5000W条，依然是3层：</p>
-<p><img src="/2020/02/14/mysql表分区/mysql_partition/partition1.png" alt="B+树层数PAGE_NO"></p>
+<p><img src="/2020/02/14/mysql_partition/mysqlpartition/partition1.png" alt="B+树层数PAGE_NO"></p>
 <pre><code><span class="operator"><span class="keyword">SELECT</span>
 b.<span class="keyword">name</span>,a.<span class="keyword">name</span>,index_id,a.<span class="keyword">space</span>,a.PAGE_NO
 <span class="keyword">FROM</span>
