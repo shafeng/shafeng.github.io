@@ -152,7 +152,7 @@ brctl delbr <span class="variable">$br</span>
 </code></pre><h3 id="通过外网端口转发将内网的服务映射到外网vps上">通过外网端口转发将内网的服务映射到外网vps上</h3><p>/usr/sbin/openvpn –cd /etc/openvpn/ –config server.conf 启动openvpn服务后，10.0.17.48就开始提供vpn服务了，但是不在公司内的外网工作人员并不能访问内网地址，就需要一个固定的外网地址进行转发，因为一直有使用ssh的端口转发功能，所以最先想到了ssh，由于ssh端口转发只支持tcp，所以只能使用tcp模式启动openvpn:</p>
 <pre><code>根据网络情况修改参数：ssh -fN -R19028:<span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">19028</span> root@<span class="number">120.100</span><span class="number">.1</span><span class="number">.1</span> -p22
 </code></pre><p>这样客户端通过连接120.100.1.1:19028 就可以访问vpn服务了。</p>
-<p>至此整套vpn就搭建完了，即使不在公司内，在家也能接入公司的网络使用svn，redmine等等开发工具了。但是在使用过程中发现一个问题，vpn经常会断开，不是某个客户端自己断开，而是整个服务器停止服务，所有客户端全部都会掉线。阅读了官网关于tcp/udp模式的介绍：<a href="https://openvpn.net/faq/why-does-openvpn-use-udp-and-tcp/" target="_blank" rel="external">https://openvpn.net/faq/why-does-openvpn-use-udp-and-tcp/</a>  原来tcp模式并不是正常的模式，官方的原话是tcp并不稳定，并不推荐使用tcp,但是本着不好用总比没有强还是支持了tcp模式，因为tcp-over-tcp会造成tcp meltdown，两层tcp造成的超时叠加重传会导致tcp熔断，整个连接就over了。<br>又回到寻找转发工具的路上，经过比较后选择了frp：<a href="https://github.com/fatedier/frp" target="_blank" rel="external">https://github.com/fatedier/frp</a>  这个国人开发的工具(貌似codis也是同一个人开发的)支持udp的转发，并支持底层传输使用kcp(kcp基于udp)，这样整个链路连同后最多只有一层tcp协议，不会发生tcp meltdown。frp的使用也很简单，需要在外网vps上启动frps:./frps -c frps.ini，内网openvpn服务器启动frpc:./frpc -c frpc.ini</p>
+<p>至此整套vpn就搭建完了，即使不在公司内，在家也能接入公司的网络使用svn，redmine等等开发工具了。但是在使用过程中发现一个问题，vpn经常会断开，不是某个客户端自己断开，而是整个服务器停止服务，所有客户端全部都会掉线。阅读了官网关于tcp/udp模式的介绍：<a href="https://openvpn.net/faq/why-does-openvpn-use-udp-and-tcp/" target="_blank" rel="external">https://openvpn.net/faq/why-does-openvpn-use-udp-and-tcp/</a>  原来tcp模式并不是正常的模式，官方的原话是tcp并不稳定，并不推荐使用tcp,但是本着不好用总比没有强还是支持了tcp模式，因为tcp-over-tcp会造成tcp meltdown，两层tcp造成的超时叠加重传会导致tcp熔断，整个连接就over了。<br>又回到寻找转发工具的路上，经过比较后选择了frp：<a href="https://github.com/fatedier/frp" target="_blank" rel="external">https://github.com/fatedier/frp</a>  这个国人开发的工具(貌似codis也是同一个人开发的)支持udp的转发，并支持底层传输使用kcp(kcp基于udp)，这样整个链路连通后最多只有一层tcp协议，不会发生tcp meltdown。frp的使用也很简单，需要在外网vps上启动frps:./frps -c frps.ini，内网openvpn服务器启动frpc:./frpc -c frpc.ini</p>
 <p>frps.ini:</p>
 <pre><code><span class="title">[common]</span>
 <span class="setting">bind_port = <span class="value"><span class="number">19027</span></span></span>
@@ -275,15 +275,15 @@ var duoshuoQuery = {short_name:"shafeng"};
   
     <li><a href="/tags/Linux/">Linux</a><small>20</small></li>
   
-    <li><a href="/tags/MySql/">MySql</a><small>4</small></li>
+    <li><a href="/tags/MySql/">MySql</a><small>5</small></li>
   
     <li><a href="/tags/OpenVPN/">OpenVPN</a><small>1</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>34</small></li>
+    <li><a href="/tags/博客/">博客</a><small>35</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>30</small></li>
+    <li><a href="/tags/技术/">技术</a><small>31</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   
