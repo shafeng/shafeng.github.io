@@ -159,7 +159,7 @@ page        index   level   data    <span class="built_in">free</span>    record
 <span class="number">9</span>           <span class="number">274</span>     <span class="number">0</span>       <span class="number">9010</span>    <span class="number">7054</span>    <span class="number">530</span>     
 <span class="number">10</span>          <span class="number">274</span>     <span class="number">0</span>       <span class="number">13685</span>   <span class="number">2285</span>    <span class="number">805</span>     
 <span class="number">11</span>          <span class="number">273</span>     <span class="number">0</span>       <span class="number">6625</span>    <span class="number">9579</span>    <span class="number">128</span> 
-</code></pre><p>page_no为3和4的page_level是2，这个树高度是page_level+1=3;</p>
+</code></pre><p>page_no为3和4的page_level是2，因为根level是0，所以这个树高度是3层;</p>
 <p>所以在我的实验中，5000W的数据表虽然进行了分区，但是B+树的层数依然是3层，在IO次数上没有变化，所以IO上提升的效率基本没有，但是由于定位分区需要开销，所以总体来说查询效率是下降的。我的结论是，也许数据量超过一定数量级后B+树会变为4层，这样一次分区表的查询会减少一次IO操作，也许会大于定位分区带来的开销，这样总体查询效率可能有提升。但是表分区总体解决的是表容量的问题，适合按时间分区，比如按不同年份分区来区分热点数据和非热点数据。</p>
 
       
