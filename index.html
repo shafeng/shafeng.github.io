@@ -53,6 +53,76 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2020-02-26T16:00:00.000Z"><a href="/2020/02/27/centos6.6-ruby2.4/">2020-02-27</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2020/02/27/centos6.6-ruby2.4/">centos6.6安装ruby2.4</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="centos6上安装高版本ruby">centos6上安装高版本ruby</h2><p>生产环境为centos6.6</p>
+<pre><code>$ cat /etc/redhat-release 
+CentOS release <span class="number">6.6</span> (Final)
+$ uname  -r
+<span class="number">2.6</span><span class="number">.32</span>-<span class="number">504.30</span><span class="number">.3</span>.el6.x86_64
+</code></pre><p>当前系统ruby版本是1.8.7</p>
+<pre><code>$ ruby --version
+ruby <span class="number">1.8</span><span class="number">.7</span> (<span class="number">2013</span>-<span class="number">06</span>-<span class="number">27</span> patchlevel <span class="number">374</span>) [x86_64-linux]
+</code></pre><p>ruby有自己的软件包管理器gem，就像python的pip，在当前环境使用gem会报错：</p>
+<pre><code>$ gem <span class="operator"><span class="keyword">install</span> innodb_ruby
+-bash: gem: command <span class="keyword">not</span> <span class="keyword">found</span></span>
+</code></pre><p>在这种情况下，我们需要在centos6上安装高版本的ruby。</p>
+<h3 id="第一步-CentOS_SCLo库">第一步-CentOS SCLo库</h3><p>添加CentOS SCLo软件集合存储库</p>
+<pre><code>$ yum -y <span class="operator"><span class="keyword">install</span> centos-<span class="keyword">release</span>-scl-rh centos-<span class="keyword">release</span>-scl</span>
+</code></pre><h3 id="第二步-安装ruby2-4">第二步-安装ruby2.4</h3><p>添加SCLo存储库后，我们可以使用以下命令安装Ruby2.4</p>
+<pre><code>$ yum <span class="keyword">install</span> rh-ruby24
+</code></pre><p>随着版本的更新，这个命令可能也会改变，如果提示没有rh-ruby24软件包，可以尝试rh-ruby25，rh-ruby26</p>
+<h3 id="第三步-设置环境变量">第三步-设置环境变量</h3><p>在CentOS6上安装Ruby2.4之后，只需设置如下所述的环境变量</p>
+<pre><code>$ scl enable rh-ruby24 bash
+
+$ ruby --version
+ruby <span class="number">2.4</span><span class="number">.6</span>p354 (<span class="number">2019</span>-<span class="number">04</span>-<span class="number">01</span> revision <span class="number">67394</span>) [x86_64-linux-gnu]
+</code></pre><p>现在就可以用gem安装ruby软件了：</p>
+<pre><code>gem install innodb_ruby
+Fetching: bindata-<span class="number">1.8</span><span class="number">.3</span>.gem (<span class="number">100</span>%)
+Successfully installed bindata-<span class="number">1.8</span><span class="number">.3</span>
+Fetching: digest-crc-<span class="number">0.4</span><span class="number">.1</span>.gem (<span class="number">100</span>%)
+Successfully installed digest-crc-<span class="number">0.4</span><span class="number">.1</span>
+Fetching: innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>.gem (<span class="number">100</span>%)
+Successfully installed innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>
+Parsing documentation <span class="keyword">for</span> bindata-<span class="number">1.8</span><span class="number">.3</span>
+Installing ri documentation <span class="keyword">for</span> bindata-<span class="number">1.8</span><span class="number">.3</span>
+Parsing documentation <span class="keyword">for</span> digest-crc-<span class="number">0.4</span><span class="number">.1</span>
+Installing ri documentation <span class="keyword">for</span> digest-crc-<span class="number">0.4</span><span class="number">.1</span>
+Parsing documentation <span class="keyword">for</span> innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>
+Installing ri documentation <span class="keyword">for</span> innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>
+Done installing documentation <span class="keyword">for</span> bindata, digest-crc, innodb_ruby after <span class="number">3</span> seconds
+<span class="number">3</span> gems installed
+</code></pre>
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2020-02-19T16:00:00.000Z"><a href="/2020/02/20/openvpn/">2020-02-20</a></time>
       
       
@@ -310,7 +380,7 @@ CALL test_select;
 
 <span class="number">3</span>，满足以下条件的某些查询可以大大优化：满足给定WHERE子句的数据只能存储在一个或多个分区上，这会自动从搜索中排除任何剩余的分区。由于可以在创建分区表之后更改分区，因此您可以重新组织数据以增强在首次设置分区方案时可能不会经常使用的频繁查询。排除不匹配分区（以及因此包含的任何行）的能力通常称为分区修剪。
 </code></pre><p>关于查询效率的解释上，我的实验应该符合官方的说法，但是并没有提高查询效率，可能是数据文件拆分后从小块文件中查询得到的效率提升并没有定位分区消耗的效率大。据说一颗3层的B+树可以承载的数据是2000W，超过2000W应该会增加到4层，但是通过查询MySQL的数据我的实验数据表已经达到了5000W条，依然是3层：</p>
-<p><img src="/2020/02/14/mysql_partition/partition1.png" alt="B+树层数PAGE_NO"></p>
+<p><img src="/2020/02/14/mysql_partition/partition1.png" alt="B+树PAGE_NO"></p>
 <pre><code><span class="operator"><span class="keyword">SELECT</span>
 b.<span class="keyword">name</span>,a.<span class="keyword">name</span>,index_id,a.<span class="keyword">space</span>,a.PAGE_NO
 <span class="keyword">FROM</span>
@@ -318,7 +388,31 @@ information_schema.INNODB_SYS_INDEXES a,
 information_schema.INNODB_SYS_TABLES b
 <span class="keyword">WHERE</span>
 a.table_id = b.table_id <span class="keyword">and</span> a.<span class="keyword">space</span> &lt;&gt; <span class="number">0</span>;</span>
-</code></pre><p>所以在我的实验中，5000W的数据表虽然进行了分区，但是B+树的层数依然是3层，在IO次数上没有变化，所以IO上提升的效率基本没有，但是由于定位分区需要开销，所以总体来说查询效率是下降的。<br>我的结论是，也许数据量超过一定数量级后B+树会变为4层，这样一次分区表的查询会减少一次IO操作，也许会大于定位分区带来的开销，这样总体查询效率可能有提升。但是表分区总体应该解决的是表容量的问题。</p>
+</code></pre><p>使用innodb_space查看数据表所在页面的B+树高度(<a href="http://shafeng.github.io/2020/02/27/centos6.6-ruby2.4/" target="_blank" rel="external">innodb_space在centos6上如何安装</a>):</p>
+<pre><code><span class="preprocessor"># innodb_space -f ./tbl_test_nosub.ibd space-index-pages-summary | head -n <span class="number">10</span></span>
+page        index   level   data    <span class="built_in">free</span>    records 
+<span class="number">3</span>           <span class="number">179</span>     <span class="number">2</span>       <span class="number">3298</span>    <span class="number">12860</span>   <span class="number">194</span>     
+<span class="number">4</span>           <span class="number">180</span>     <span class="number">2</span>       <span class="number">2100</span>    <span class="number">14122</span>   <span class="number">100</span>     
+<span class="number">5</span>           <span class="number">179</span>     <span class="number">0</span>       <span class="number">7680</span>    <span class="number">8496</span>    <span class="number">152</span>     
+<span class="number">6</span>           <span class="number">179</span>     <span class="number">0</span>       <span class="number">15047</span>   <span class="number">1067</span>    <span class="number">293</span>     
+<span class="number">7</span>           <span class="number">179</span>     <span class="number">0</span>       <span class="number">15037</span>   <span class="number">1077</span>    <span class="number">292</span>     
+<span class="number">8</span>           <span class="number">179</span>     <span class="number">0</span>       <span class="number">15077</span>   <span class="number">1037</span>    <span class="number">292</span>     
+<span class="number">9</span>           <span class="number">180</span>     <span class="number">0</span>       <span class="number">15283</span>   <span class="number">521</span>     <span class="number">899</span>     
+<span class="number">10</span>          <span class="number">180</span>     <span class="number">0</span>       <span class="number">15283</span>   <span class="number">521</span>     <span class="number">899</span>     
+<span class="number">11</span>          <span class="number">179</span>     <span class="number">0</span>       <span class="number">309</span>     <span class="number">15943</span>   <span class="number">6</span>       
+<span class="preprocessor"># innodb_space -f ./tbl_test_sub#P#p0.ibd space-index-pages-summary | head -n <span class="number">10</span></span>
+page        index   level   data    <span class="built_in">free</span>    records 
+<span class="number">3</span>           <span class="number">273</span>     <span class="number">2</span>       <span class="number">289</span>     <span class="number">15959</span>   <span class="number">17</span>      
+<span class="number">4</span>           <span class="number">274</span>     <span class="number">2</span>       <span class="number">168</span>     <span class="number">16082</span>   <span class="number">8</span>       
+<span class="number">5</span>           <span class="number">273</span>     <span class="number">0</span>       <span class="number">16011</span>   <span class="number">125</span>     <span class="number">310</span>     
+<span class="number">6</span>           <span class="number">273</span>     <span class="number">0</span>       <span class="number">9424</span>    <span class="number">6760</span>    <span class="number">182</span>     
+<span class="number">7</span>           <span class="number">273</span>     <span class="number">0</span>       <span class="number">13832</span>   <span class="number">2322</span>    <span class="number">267</span>     
+<span class="number">8</span>           <span class="number">273</span>     <span class="number">0</span>       <span class="number">9423</span>    <span class="number">6749</span>    <span class="number">182</span>     
+<span class="number">9</span>           <span class="number">274</span>     <span class="number">0</span>       <span class="number">9010</span>    <span class="number">7054</span>    <span class="number">530</span>     
+<span class="number">10</span>          <span class="number">274</span>     <span class="number">0</span>       <span class="number">13685</span>   <span class="number">2285</span>    <span class="number">805</span>     
+<span class="number">11</span>          <span class="number">273</span>     <span class="number">0</span>       <span class="number">6625</span>    <span class="number">9579</span>    <span class="number">128</span> 
+</code></pre><p>page_no为3和4的page_level是2，这个树高度是page_level+1=3;</p>
+<p>所以在我的实验中，5000W的数据表虽然进行了分区，但是B+树的层数依然是3层，在IO次数上没有变化，所以IO上提升的效率基本没有，但是由于定位分区需要开销，所以总体来说查询效率是下降的。我的结论是，也许数据量超过一定数量级后B+树会变为4层，这样一次分区表的查询会减少一次IO操作，也许会大于定位分区带来的开销，这样总体查询效率可能有提升。但是表分区总体解决的是表容量的问题，适合按时间分区，比如按不同年份分区来区分热点数据和非热点数据。</p>
 
       
     </div>
@@ -4620,9 +4714,9 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>35</small></li>
+    <li><a href="/tags/博客/">博客</a><small>36</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>31</small></li>
+    <li><a href="/tags/技术/">技术</a><small>32</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   

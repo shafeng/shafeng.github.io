@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>mysql 优化配置和一些参数的解释 | Shafeng`s blog</title>
+  <title>centos6.6安装ruby2.4 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="mysql 优化配置和一些参数的解释"/>
+  <meta property="og:title" content="centos6.6安装ruby2.4"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,58 +52,55 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2017-06-10T04:00:00.000Z"><a href="/2017/06/10/mysql/">2017-06-10</a></time>
+        <time datetime="2020-02-26T16:00:00.000Z"><a href="/2020/02/27/centos6.6-ruby2.4/">2020-02-27</a></time>
       
       
   
-    <h1 class="title">mysql 优化配置和一些参数的解释</h1>
+    <h1 class="title">centos6.6安装ruby2.4</h1>
   
 
     </header>
     <div class="entry">
       
-        <h2 id="Mysql的一些性能优化记录">Mysql的一些性能优化记录</h2><p>项目上经过合服等操作,单服的玩家数量一度超过500W,一些排行榜数据和玩家摘要数据在程序启动时就要从数据库中加载,数据量的增大也延长了服务器程序的启动时间,一些必要的优化就在所难免了.贴一下数据的配置.做一下记录</p>
-<pre><code>[client]
-<span class="constant">socket</span> = /tmp/mysql.sock
+        <h2 id="centos6上安装高版本ruby">centos6上安装高版本ruby</h2><p>生产环境为centos6.6</p>
+<pre><code>$ cat /etc/redhat-release 
+CentOS release <span class="number">6.6</span> (Final)
+$ uname  -r
+<span class="number">2.6</span><span class="number">.32</span>-<span class="number">504.30</span><span class="number">.3</span>.el6.x86_64
+</code></pre><p>当前系统ruby版本是1.8.7</p>
+<pre><code>$ ruby --version
+ruby <span class="number">1.8</span><span class="number">.7</span> (<span class="number">2013</span>-<span class="number">06</span>-<span class="number">27</span> patchlevel <span class="number">374</span>) [x86_64-linux]
+</code></pre><p>ruby有自己的软件包管理器gem，就像python的pip，在当前环境使用gem会报错：</p>
+<pre><code>$ gem <span class="operator"><span class="keyword">install</span> innodb_ruby
+-bash: gem: command <span class="keyword">not</span> <span class="keyword">found</span></span>
+</code></pre><p>在这种情况下，我们需要在centos6上安装高版本的ruby。</p>
+<h3 id="第一步-CentOS_SCLo库">第一步-CentOS SCLo库</h3><p>添加CentOS SCLo软件集合存储库</p>
+<pre><code>$ yum -y <span class="operator"><span class="keyword">install</span> centos-<span class="keyword">release</span>-scl-rh centos-<span class="keyword">release</span>-scl</span>
+</code></pre><h3 id="第二步-安装ruby2-4">第二步-安装ruby2.4</h3><p>添加SCLo存储库后，我们可以使用以下命令安装Ruby2.4</p>
+<pre><code>$ yum <span class="keyword">install</span> rh-ruby24
+</code></pre><p>随着版本的更新，这个命令可能也会改变，如果提示没有rh-ruby24软件包，可以尝试rh-ruby25，rh-ruby26</p>
+<h3 id="第三步-设置环境变量">第三步-设置环境变量</h3><p>在CentOS6上安装Ruby2.4之后，只需设置如下所述的环境变量</p>
+<pre><code>$ scl enable rh-ruby24 bash
 
-
-[mysqld_multi]
-<span class="constant">log</span>        = /data/mysql_db/mysqld_multi.log
-<span class="constant">mysqld</span>     = /usr/bin/mysqld_safe
-<span class="constant">mysqladmin</span> = /usr/bin/mysqladmin
-<span class="constant">user</span>       = shutdown_user
-
-<span class="comment">###########################################################################################</span>
-[mysqld4306]
-<span class="constant">port</span>       = 4306
-<span class="constant">socket</span>     = /tmp/mysql_4306.sock
-pid-file   = /tmp/mysql_4306.pid
-<span class="constant">datadir</span>    = /data/mysql_db/4306
-<span class="constant">default_storage_engine</span> = InnoDB
-<span class="constant">sql_mode</span>=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
-skip-name-resolve
-<span class="constant">max_connections</span> = 1000
-<span class="constant">innodb_flush_log_at_trx_commit</span> = 2
-<span class="constant">innodb_flush_log_at_timeout</span>     =1
-<span class="constant">innodb_buffer_pool_size</span> = 24080M
-<span class="constant">innodb_log_buffer_size</span> = 8M
-<span class="constant">innodb_log_file_size</span> = 256M
-log-bin=/data/mysql_binlog/4306/mysql-bin
-<span class="constant">binlog_format</span>=MIXED
-<span class="constant">binlog_cache_size</span> = 1M
-<span class="constant">max_binlog_size</span>=512M
-log_warnings
-slow_query_log
-<span class="constant">long_query_time</span> = 2
-server-id = 1
-<span class="constant">expire_logs_days</span> = 5
-secure-file-priv=
-<span class="constant">tmpdir</span>=/data/mysql_tmp
-</code></pre><h3 id="innodb_buffer_pool_size">innodb_buffer_pool_size</h3><p>这个选项调大可以增加innodb的内存大小,减少io操作</p>
-<h3 id="expire_logs_days">expire_logs_days</h3><p>这个选项可以指定binlog保存的天数,binlog占用硬盘空间特别大,但是binlog又是恢复数据库时最宝贵的log,所以如何权衡这个问题还得结合自己项目的需要</p>
-<h3 id="secure-file-priv=">secure-file-priv=</h3><p>这个选项可以让其他用户写入数据,项目在合服时无法写入数据,加入这个配置可以降低数据库的安全性检查</p>
-<h3 id="tmpdir=/data/mysql_tmp">tmpdir=/data/mysql_tmp</h3><p>这个选项可以指定mysql在运行时使用的硬盘空间地址,默认的地址是在系统盘,而一般系统盘的空间较小,把目录指定到空间较大的目录可以有效提高数据库的io效率<br>如果表结构发生了改变，需要增加表列，而这个表本身的数据量非常大，那么mysql就会用到大量的硬盘空间，如果空间不足，在修改表结构的时候可能会报错<code>Incorrect key file for table &#39;tbl_xxx&#39;; try to repair it</code>,<br>那么就必须把mysql的tmpdir指定到一个容量大的地方。<br>/data/mysql_tmp文件夹必须创建出来，并且给mysql用户添加权限 <code>chown -R mysql:mysql mysql_tmp/</code></p>
-
+$ ruby --version
+ruby <span class="number">2.4</span><span class="number">.6</span>p354 (<span class="number">2019</span>-<span class="number">04</span>-<span class="number">01</span> revision <span class="number">67394</span>) [x86_64-linux-gnu]
+</code></pre><p>现在就可以用gem安装ruby软件了：</p>
+<pre><code>gem install innodb_ruby
+Fetching: bindata-<span class="number">1.8</span><span class="number">.3</span>.gem (<span class="number">100</span>%)
+Successfully installed bindata-<span class="number">1.8</span><span class="number">.3</span>
+Fetching: digest-crc-<span class="number">0.4</span><span class="number">.1</span>.gem (<span class="number">100</span>%)
+Successfully installed digest-crc-<span class="number">0.4</span><span class="number">.1</span>
+Fetching: innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>.gem (<span class="number">100</span>%)
+Successfully installed innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>
+Parsing documentation <span class="keyword">for</span> bindata-<span class="number">1.8</span><span class="number">.3</span>
+Installing ri documentation <span class="keyword">for</span> bindata-<span class="number">1.8</span><span class="number">.3</span>
+Parsing documentation <span class="keyword">for</span> digest-crc-<span class="number">0.4</span><span class="number">.1</span>
+Installing ri documentation <span class="keyword">for</span> digest-crc-<span class="number">0.4</span><span class="number">.1</span>
+Parsing documentation <span class="keyword">for</span> innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>
+Installing ri documentation <span class="keyword">for</span> innodb_ruby-<span class="number">0.9</span><span class="number">.16</span>
+Done installing documentation <span class="keyword">for</span> bindata, digest-crc, innodb_ruby after <span class="number">3</span> seconds
+<span class="number">3</span> gems installed
+</code></pre>
       
     </div>
     <footer>
@@ -112,7 +109,7 @@ secure-file-priv=
         
   
   <div class="tags">
-    <a href="/tags/Linux/">Linux</a>, <a href="/tags/MySql/">MySql</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+    <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>
