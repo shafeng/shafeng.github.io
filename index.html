@@ -435,6 +435,55 @@ page        index   level   data    <span class="built_in">free</span>    record
     <header>
       
         <div class="icon"></div>
+        <time datetime="2019-09-06T16:00:00.000Z"><a href="/2019/09/07/远程备份MySQL并恢复/">2019-09-07</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2019/09/07/远程备份MySQL并恢复/">记一次MySQL远程备份恢复，并重新设置主从过程</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="远程备份">远程备份</h3><p>安装percona-xtrabackup：</p>
+<pre><code>yum install http<span class="variable">s:</span>//repo.percona.<span class="keyword">com</span>/yum/percona-release-latest.noarch.rpm
+yum install <span class="keyword">perl</span>-DBI <span class="keyword">perl</span>-DBD-MySQL <span class="keyword">perl</span>-Digest-MD5 <span class="keyword">perl</span>-IO-Socket-SSL <span class="keyword">perl</span>-TermReadKey
+yum install percona-xtrabackup-<span class="number">24</span>
+</code></pre><h4 id="备份，将本地的数据库数据备份到远程机器">备份，将本地的数据库数据备份到远程机器</h4><pre><code><span class="comment">innobackupex</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">defaults</span><span class="literal">-</span><span class="comment">file=/etc/my</span><span class="string">.</span><span class="comment">cnf</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">defaults</span><span class="literal">-</span><span class="comment">group=mysqld4306</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">user=backup</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">socket=/tmp/mysql_4306</span><span class="string">.</span><span class="comment">sock</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">no</span><span class="literal">-</span><span class="comment">lock</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">no</span><span class="literal">-</span><span class="comment">timestamp</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">stream=tar</span> <span class="string">.</span><span class="comment">/</span> <span class="comment">|</span> <span class="comment">ssh</span> <span class="comment">root@120</span><span class="string">.</span><span class="comment">1</span><span class="string">.</span><span class="comment">100</span><span class="string">.</span><span class="comment">100</span> <span class="literal">-</span><span class="comment">p22</span> <span class="comment">\</span> <span class="comment">"cat</span> <span class="literal">-</span> &gt; <span class="comment">/data/service/mysql_4306</span><span class="string">.</span><span class="comment">tar"</span>
+</code></pre><h4 id="在远程机器上解压，然后恢复数据(恢复完之后会得到binlog文件的名字和当前binlog序号，下面要用)">在远程机器上解压，然后恢复数据(恢复完之后会得到binlog文件的名字和当前binlog序号，下面要用)</h4><pre><code><span class="comment">tar</span> <span class="literal">-</span><span class="comment">xvf</span> <span class="comment">mysql_4306</span><span class="string">.</span><span class="comment">tar</span>
+<span class="comment">innobackupex</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">user</span> <span class="comment">root</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">password</span> <span class="comment">'your_mysql_pwd'</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">apply</span><span class="literal">-</span><span class="comment">log</span> <span class="comment">/data/service/mysql_4306</span>
+</code></pre><h4 id="把数据移动到mysql并修改文件夹用户属性">把数据移动到mysql并修改文件夹用户属性</h4><pre><code>mv <span class="regexp">/data/</span>service<span class="regexp">/mysql_4306/</span>* <span class="regexp">/data/</span>mysql_db<span class="regexp">/4306/</span>
+chown -R <span class="string">mysql:</span>mysql <span class="regexp">/data/</span>mysql_db<span class="regexp">/4306/</span>
+</code></pre><h4 id="启动mysql,并设置主从">启动mysql,并设置主从</h4><pre><code><span class="regexp">/etc/</span>rc.d<span class="regexp">/init.d/my</span>sqld_multi start <span class="number">4306</span>
+</code></pre><p>用得到的binlog信息在mysql中重新设置主从（InnoDB: xtrabackup: Last MySQL binlog file position 202221999, file name mysql-bin.071479）</p>
+<pre><code><span class="operator"><span class="keyword">CHANGE</span> <span class="keyword">MASTER</span> <span class="keyword">TO</span> MASTER_HOST = <span class="string">'172.31.0.1'</span>, MASTER_PORT =<span class="number">4306</span>, MASTER_USER=<span class="string">'slave_user'</span>, MASTER_PASSWORD=<span class="string">'slave_user'</span>, MASTER_LOG_FILE=<span class="string">'mysql-bin.071479'</span>, MASTER_LOG_POS=<span class="number">202221999</span>;</span>
+</code></pre><p>启动从服务</p>
+<pre><code><span class="operator"><span class="keyword">start</span> <span class="keyword">slave</span>;</span>
+</code></pre><p>查看从库状态</p>
+<pre><code><span class="operator"><span class="keyword">show</span> <span class="keyword">slave</span> <span class="keyword">status</span>;</span>
+</code></pre><p>看到两个yes表示主从已经正常了。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2018-08-24T16:00:00.000Z"><a href="/2018/08/25/合服/">2018-08-25</a></time>
       
       
@@ -445,7 +494,17 @@ page        index   level   data    <span class="built_in">free</span>    record
     </header>
     <div class="entry">
       
-        <h2 id="合服">合服</h2>
+        <h2 id="合服">合服</h2><p>我们的项目线上运营了三年多，经历了很多次开新服，合服的过程，至此有一些服已经多次合服，并入了大量的数据，这些数据中大部分已经成为僵尸数据，已经影响了服务启动速度和普通玩家体验。现在运营要求将两个已经拥有海量数据的服合并，如果这种级别的两个库合并的话无疑会造成很多隐患，也许会无法支持业务，所以在跟运行协商后决定将库中一些只进行了新手阶段体验且没有进行充值的大量僵尸玩家删除，如果这些玩家回来，重新创建角色差别也不是很大。这不是最好的解决方法，但是鉴于项目整体条件和环境，也算是一个可行的方案。</p>
+<p>由于一些历史遗留原因和设计与实际生产产生的偏差，单个数据库实例中某些表已经变的非常庞大，数据量超过亿条，已经出现一些200ms的慢查询。将两张亿级的数据表进行合并肯定不是一个好的选择，只能将一些僵尸数据进行转移或者删除，这里在跟运营协商后直接删除了，编写了python脚本在线上环境中删除数据，尽量保证删除过程不会对表进行长时间写锁定，保证线上项目的稳定。 长时间的数据删除结束后，表数据应该减少了3/4左右，但是数据库表文件的文件大小并没有改变。 原来mysql在删除数据后并不会进行磁盘整理，这些被删掉的数据空间会被下次写入时复用。  如果需要整理碎片要进行手动操作:</p>
+<pre><code><span class="operator"><span class="keyword">alter</span> <span class="string">"ENGINE=InnoDB"</span> <span class="keyword">D</span>=db_name,<span class="keyword">t</span>=tbl_name</span>
+</code></pre><p>表本身存储引擎就是InnoDB，执行这样一个类似空转的语句可以让mysql对数据表进行碎片整理。但是这个语句肯定会锁表，在维护期间执行的话时间恐怕也不够，所以用pt来做这件事情</p>
+<h3 id="安装和使用pt-osc">安装和使用pt-osc</h3><pre><code>wget https:<span class="comment">//www.percona.com/downloads/percona-toolkit/3.0.13/binary/redhat/6/x86_64/percona-toolkit-3.0.13-1.el6.x86_64.rpm</span>
+yum install -y percona-toolkit-<span class="number">3.0</span>.<span class="number">13</span>-<span class="number">1</span><span class="class">.el6</span><span class="class">.x86_64</span><span class="class">.rpm</span>
+
+
+pt-online-schema-change --user=root --password=<span class="string">'your_mysql_pwd'</span> --socket=/tmp/mysql_4306<span class="class">.sock</span> --alter <span class="string">"ENGINE=InnoDB"</span> D=db_name,t=tbl_name --execute
+</code></pre><p>经过漫长的等待后执行完毕，表文件占用空间减少了很多。解决了所有表的空间占用后，两个本身数据量非常大的库瘦身了很多，之后再合服压力就没那么大了，基本在可控范围内。</p>
+
       
     </div>
     <footer>
@@ -4708,15 +4767,15 @@ GLint main(GLint argc,char** argv)
   
     <li><a href="/tags/Linux/">Linux</a><small>20</small></li>
   
-    <li><a href="/tags/MySql/">MySql</a><small>5</small></li>
+    <li><a href="/tags/MySql/">MySql</a><small>6</small></li>
   
     <li><a href="/tags/OpenVPN/">OpenVPN</a><small>1</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>36</small></li>
+    <li><a href="/tags/博客/">博客</a><small>37</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>32</small></li>
+    <li><a href="/tags/技术/">技术</a><small>33</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   

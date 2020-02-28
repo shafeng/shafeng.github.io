@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>C++中的协程(下) | Shafeng`s blog</title>
+  <title>记一次MySQL远程备份恢复，并重新设置主从过程 | Shafeng`s blog</title>
   <meta name="author" content="shafeng">
   
   <meta name="description" content="c++">
@@ -11,7 +11,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="C++中的协程(下)"/>
+  <meta property="og:title" content="记一次MySQL远程备份恢复，并重新设置主从过程"/>
   <meta property="og:site_name" content="Shafeng`s blog"/>
 
   
@@ -52,27 +52,33 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2017-11-16T04:00:00.000Z"><a href="/2017/11/16/C++协程_2/">2017-11-16</a></time>
+        <time datetime="2019-09-06T16:00:00.000Z"><a href="/2019/09/07/远程备份MySQL并恢复/">2019-09-07</a></time>
       
       
   
-    <h1 class="title">C++中的协程(下)</h1>
+    <h1 class="title">记一次MySQL远程备份恢复，并重新设置主从过程</h1>
   
 
     </header>
     <div class="entry">
       
-        <h1 id="ucontext协程的封装">ucontext协程的封装</h1><p>前面介绍了unix自带的ucontext相关函数，现在记录一下我们实际项目中的使用。</p>
-<p>我们的项目中，每个玩家在登陆时创建玩家对象<code>CHZUser</code>，同时通过<code>SVR_BASE::co_create</code>函数创建一个协程上下文对象（后面简称协程对象），协程对象的执行函数是该玩家的消息循环函数<code>CHZUser::message_loop</code>,</p>
-<pre><code><span class="class"><span class="keyword">enum</span> <span class="title">CoroutineStatus_t</span></span>
-{
-    emCoroutine_closed    =<span class="number">0</span>,    <span class="regexp">//</span><span class="regexp">/&lt; 关闭的
-    emCoroutine_WaitRun,    /</span><span class="regexp">//</span>&lt; 等待执行
-    emCoroutine_Runing,        <span class="regexp">//</span><span class="regexp">/&lt; 正在执行
-    emCoroutine_Message,    /</span><span class="regexp">//</span>&lt; 等着消息
-    emCoroutine_IOComplete    /<span class="regexp">//</span>&lt; 等待<span class="constant">IO</span>完成
-};
-</code></pre><p>协程的五个状态</p>
+        <h3 id="远程备份">远程备份</h3><p>安装percona-xtrabackup：</p>
+<pre><code>yum install http<span class="variable">s:</span>//repo.percona.<span class="keyword">com</span>/yum/percona-release-latest.noarch.rpm
+yum install <span class="keyword">perl</span>-DBI <span class="keyword">perl</span>-DBD-MySQL <span class="keyword">perl</span>-Digest-MD5 <span class="keyword">perl</span>-IO-Socket-SSL <span class="keyword">perl</span>-TermReadKey
+yum install percona-xtrabackup-<span class="number">24</span>
+</code></pre><h4 id="备份，将本地的数据库数据备份到远程机器">备份，将本地的数据库数据备份到远程机器</h4><pre><code><span class="comment">innobackupex</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">defaults</span><span class="literal">-</span><span class="comment">file=/etc/my</span><span class="string">.</span><span class="comment">cnf</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">defaults</span><span class="literal">-</span><span class="comment">group=mysqld4306</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">user=backup</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">socket=/tmp/mysql_4306</span><span class="string">.</span><span class="comment">sock</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">no</span><span class="literal">-</span><span class="comment">lock</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">no</span><span class="literal">-</span><span class="comment">timestamp</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">stream=tar</span> <span class="string">.</span><span class="comment">/</span> <span class="comment">|</span> <span class="comment">ssh</span> <span class="comment">root@120</span><span class="string">.</span><span class="comment">1</span><span class="string">.</span><span class="comment">100</span><span class="string">.</span><span class="comment">100</span> <span class="literal">-</span><span class="comment">p22</span> <span class="comment">\</span> <span class="comment">"cat</span> <span class="literal">-</span> &gt; <span class="comment">/data/service/mysql_4306</span><span class="string">.</span><span class="comment">tar"</span>
+</code></pre><h4 id="在远程机器上解压，然后恢复数据(恢复完之后会得到binlog文件的名字和当前binlog序号，下面要用)">在远程机器上解压，然后恢复数据(恢复完之后会得到binlog文件的名字和当前binlog序号，下面要用)</h4><pre><code><span class="comment">tar</span> <span class="literal">-</span><span class="comment">xvf</span> <span class="comment">mysql_4306</span><span class="string">.</span><span class="comment">tar</span>
+<span class="comment">innobackupex</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">user</span> <span class="comment">root</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">password</span> <span class="comment">'your_mysql_pwd'</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">apply</span><span class="literal">-</span><span class="comment">log</span> <span class="comment">/data/service/mysql_4306</span>
+</code></pre><h4 id="把数据移动到mysql并修改文件夹用户属性">把数据移动到mysql并修改文件夹用户属性</h4><pre><code>mv <span class="regexp">/data/</span>service<span class="regexp">/mysql_4306/</span>* <span class="regexp">/data/</span>mysql_db<span class="regexp">/4306/</span>
+chown -R <span class="string">mysql:</span>mysql <span class="regexp">/data/</span>mysql_db<span class="regexp">/4306/</span>
+</code></pre><h4 id="启动mysql,并设置主从">启动mysql,并设置主从</h4><pre><code><span class="regexp">/etc/</span>rc.d<span class="regexp">/init.d/my</span>sqld_multi start <span class="number">4306</span>
+</code></pre><p>用得到的binlog信息在mysql中重新设置主从（InnoDB: xtrabackup: Last MySQL binlog file position 202221999, file name mysql-bin.071479）</p>
+<pre><code><span class="operator"><span class="keyword">CHANGE</span> <span class="keyword">MASTER</span> <span class="keyword">TO</span> MASTER_HOST = <span class="string">'172.31.0.1'</span>, MASTER_PORT =<span class="number">4306</span>, MASTER_USER=<span class="string">'slave_user'</span>, MASTER_PASSWORD=<span class="string">'slave_user'</span>, MASTER_LOG_FILE=<span class="string">'mysql-bin.071479'</span>, MASTER_LOG_POS=<span class="number">202221999</span>;</span>
+</code></pre><p>启动从服务</p>
+<pre><code><span class="operator"><span class="keyword">start</span> <span class="keyword">slave</span>;</span>
+</code></pre><p>查看从库状态</p>
+<pre><code><span class="operator"><span class="keyword">show</span> <span class="keyword">slave</span> <span class="keyword">status</span>;</span>
+</code></pre><p>看到两个yes表示主从已经正常了。</p>
 
       
     </div>
@@ -82,7 +88,7 @@
         
   
   <div class="tags">
-    <a href="/tags/C/">C++</a>, <a href="/tags/Linux/">Linux</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
+    <a href="/tags/MySql/">MySql</a>, <a href="/tags/博客/">博客</a>, <a href="/tags/技术/">技术</a>
   </div>
 
 		<div class="bdsharebuttonbox"><a href="#" class="bds_more" data-cmd="more"></a><a href="#" class="bds_qzone" data-cmd="qzone"></a><a href="#" class="bds_tsina" data-cmd="tsina"></a><a href="#" class="bds_tqq" data-cmd="tqq"></a><a href="#" class="bds_renren" data-cmd="renren"></a><a href="#" class="bds_weixin" data-cmd="weixin"></a></div>

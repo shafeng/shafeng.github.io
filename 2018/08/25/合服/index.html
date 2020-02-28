@@ -62,7 +62,17 @@
     </header>
     <div class="entry">
       
-        <h2 id="合服">合服</h2>
+        <h2 id="合服">合服</h2><p>我们的项目线上运营了三年多，经历了很多次开新服，合服的过程，至此有一些服已经多次合服，并入了大量的数据，这些数据中大部分已经成为僵尸数据，已经影响了服务启动速度和普通玩家体验。现在运营要求将两个已经拥有海量数据的服合并，如果这种级别的两个库合并的话无疑会造成很多隐患，也许会无法支持业务，所以在跟运行协商后决定将库中一些只进行了新手阶段体验且没有进行充值的大量僵尸玩家删除，如果这些玩家回来，重新创建角色差别也不是很大。这不是最好的解决方法，但是鉴于项目整体条件和环境，也算是一个可行的方案。</p>
+<p>由于一些历史遗留原因和设计与实际生产产生的偏差，单个数据库实例中某些表已经变的非常庞大，数据量超过亿条，已经出现一些200ms的慢查询。将两张亿级的数据表进行合并肯定不是一个好的选择，只能将一些僵尸数据进行转移或者删除，这里在跟运营协商后直接删除了，编写了python脚本在线上环境中删除数据，尽量保证删除过程不会对表进行长时间写锁定，保证线上项目的稳定。 长时间的数据删除结束后，表数据应该减少了3/4左右，但是数据库表文件的文件大小并没有改变。 原来mysql在删除数据后并不会进行磁盘整理，这些被删掉的数据空间会被下次写入时复用。  如果需要整理碎片要进行手动操作:</p>
+<pre><code><span class="operator"><span class="keyword">alter</span> <span class="string">"ENGINE=InnoDB"</span> <span class="keyword">D</span>=db_name,<span class="keyword">t</span>=tbl_name</span>
+</code></pre><p>表本身存储引擎就是InnoDB，执行这样一个类似空转的语句可以让mysql对数据表进行碎片整理。但是这个语句肯定会锁表，在维护期间执行的话时间恐怕也不够，所以用pt来做这件事情</p>
+<h3 id="安装和使用pt-osc">安装和使用pt-osc</h3><pre><code>wget https:<span class="comment">//www.percona.com/downloads/percona-toolkit/3.0.13/binary/redhat/6/x86_64/percona-toolkit-3.0.13-1.el6.x86_64.rpm</span>
+yum install -y percona-toolkit-<span class="number">3.0</span>.<span class="number">13</span>-<span class="number">1</span><span class="class">.el6</span><span class="class">.x86_64</span><span class="class">.rpm</span>
+
+
+pt-online-schema-change --user=root --password=<span class="string">'your_mysql_pwd'</span> --socket=/tmp/mysql_4306<span class="class">.sock</span> --alter <span class="string">"ENGINE=InnoDB"</span> D=db_name,t=tbl_name --execute
+</code></pre><p>经过漫长的等待后执行完毕，表文件占用空间减少了很多。解决了所有表的空间占用后，两个本身数据量非常大的库瘦身了很多，之后再合服压力就没那么大了，基本在可控范围内。</p>
+
       
     </div>
     <footer>
@@ -126,15 +136,15 @@ var duoshuoQuery = {short_name:"shafeng"};
   
     <li><a href="/tags/Linux/">Linux</a><small>20</small></li>
   
-    <li><a href="/tags/MySql/">MySql</a><small>5</small></li>
+    <li><a href="/tags/MySql/">MySql</a><small>6</small></li>
   
     <li><a href="/tags/OpenVPN/">OpenVPN</a><small>1</small></li>
   
     <li><a href="/tags/Redis/">Redis</a><small>3</small></li>
   
-    <li><a href="/tags/博客/">博客</a><small>36</small></li>
+    <li><a href="/tags/博客/">博客</a><small>37</small></li>
   
-    <li><a href="/tags/技术/">技术</a><small>32</small></li>
+    <li><a href="/tags/技术/">技术</a><small>33</small></li>
   
     <li><a href="/tags/源代码/">源代码</a><small>1</small></li>
   
